@@ -99,14 +99,18 @@ const SPONSORS=[
   {id:"altra",name:"Altra",word:"ALTRA",bg:"#1f2f4a",fg:"#ffffff",shoe:true},
   {id:"naak",name:"Naak",word:"NAAK",bg:"#0f3b2e",fg:"#f2c230"},
   {id:"coca",name:"Coca-Cola",word:"Coca-Cola",bg:"#e41e2b",fg:"#ffffff",italic:true},
-  {id:"normal",name:"Normal",word:"normal",bg:"#ffffff",fg:"#111111",lower:true},
+  {id:"nnormal",name:"Nnormal",word:"NNORMAL",bg:"#ffffff",fg:"#111111",shoe:true},
+  {id:"adidas",name:"Adidas",word:"adidas",bg:"#111111",fg:"#ffffff",lower:true,shoe:true},
+  {id:"nike",name:"Nike",word:"NIKE",bg:"#f4f1e8",fg:"#111111",shoe:true},
+  {id:"petzl",name:"Petzl",word:"PETZL",bg:"#f26b1d",fg:"#ffffff"},
+  {id:"stoots",name:"Stoots",word:"STOOTS",bg:"#2b2f6b",fg:"#ffffff"},
 ];
 const sponsorById=id=>SPONSORS.find(s=>s.id===id);
 // arches : sponsor du départ et de l'arrivée de chaque parcours
-const ARCH_SPONSORS={chamonix:["salomon","hoka"],jura:["altra","naak"],pyrenees:["saucony","coca"],auvergne:["normal","salomon"],champex:["hoka","altra"],paysbasque:["naak","saucony"],calanques:["coca","normal"],ventoux:["salomon","coca"],verbier:["altra","hoka"]};
+const ARCH_SPONSORS={chamonix:["salomon","petzl"],jura:["altra","naak"],pyrenees:["saucony","coca"],auvergne:["nnormal","adidas"],champex:["hoka","nike"],paysbasque:["stoots","saucony"],calanques:["coca","nnormal"],ventoux:["adidas","petzl"],verbier:["nike","hoka"]};
 // équipement par défaut de chaque héros : maillot, chaussures, casquette (null = sans)
-const HERO_SPONSORS={lina:["salomon","salomon",null],marco:["normal","altra","normal"],ines:["coca","hoka",null],hugo:["naak","saucony","naak"],maia:["saucony","saucony",null],
-  yanis:["altra","altra",null],chloe:["hoka","hoka","hoka"],baptiste:["coca","salomon","coca"],awa:["salomon","hoka",null],theo:["naak","altra","salomon"]};
+const HERO_SPONSORS={lina:["salomon","salomon",null],marco:["petzl","altra","petzl"],ines:["nike","nike",null],hugo:["naak","saucony","naak"],maia:["stoots","saucony",null],
+  yanis:["nnormal","nnormal",null],chloe:["hoka","hoka","hoka"],baptiste:["coca","salomon","coca"],awa:["adidas","adidas",null],theo:["stoots","altra","petzl"]};
 // produits du ravito
 const FOODS={
   coca:{label:"Coca-Cola",brand:"coca",msg:"+35 d’énergie et coup de fouet",stam:35,boost:{kind:"fouet",t:8,label:"Coup de fouet"}},

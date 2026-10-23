@@ -119,7 +119,7 @@ L’option **Météo du jour** tire la météo selon le climat de chaque parcour
 
 ## 📣 Espaces sponsors
 
-Sept marques (Salomon, Hoka One One, Saucony, Altra, Naak, Coca-Cola, Normal) sont réparties sur cinq emplacements :
+Onze marques (Salomon, Hoka One One, Saucony, Altra, Nnormal, Adidas, Nike, Petzl, Stoots, Naak, Coca-Cola) sont réparties sur cinq emplacements :
 
 - **arches** de départ et d’arrivée de chaque parcours (bandeau et oriflammes) ;
 - **panneaux** publicitaires le long du sentier, et bâches sur la ligne droite d’arrivée ;
