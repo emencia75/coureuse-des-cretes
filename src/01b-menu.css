@@ -38,7 +38,13 @@ th.r,td.r{text-align:right}
 .tabs{display:flex;gap:6px;flex-wrap:wrap}
 .tabs button{background:transparent;border:1px solid var(--line);color:var(--muted);border-radius:3px;padding:7px 11px;font-weight:700;font-size:12px;letter-spacing:.08em;text-transform:uppercase}
 .tabs button[aria-selected="true"]{background:var(--paper);color:var(--ink);border-color:var(--paper)}
-.tabs button b{font-family:var(--display);font-size:14px;margin-right:6px;opacity:.6}
+.tabs button b{font-family:var(--display);font-size:13px;margin-left:4px;padding:0 5px;border-radius:8px;background:rgba(255,255,255,.14)}
+.bonus{margin-top:6px;display:inline-block;background:rgba(13,23,20,.7);border:1px solid var(--sign);color:var(--sign);font-weight:700;font-size:12px;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:3px}
+.sp-intro{margin:0;font-size:13px;line-height:1.5;color:var(--paper);max-width:56ch}
+.disclaimer{margin:4px 0 0;font-size:12px;line-height:1.45;color:var(--muted);border-left:3px solid var(--sign);padding-left:10px}
+.wm{display:inline-block;padding:3px 8px;border-radius:3px;font-family:var(--display);font-weight:900;font-size:14px;letter-spacing:.04em;white-space:nowrap}
+.chip.spc{display:inline-flex;align-items:center;gap:6px}
+.chip.spc i{width:10px;height:10px;border-radius:2px;display:inline-block;border:1px solid rgba(255,255,255,.4)}
 
 /* Menu : panneau de configuration à gauche, aperçu 3D à droite */
 #menu{position:fixed;inset:0;pointer-events:none}

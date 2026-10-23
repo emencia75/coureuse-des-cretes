@@ -89,3 +89,28 @@ function heroParams(h){const s=h.stats,ab=h.ab.id;return{
   drain:(26-s.endu*2.2)*(ab==="diesel"?.6:1), regen:5+s.endu*.7, fallT:2.15-s.robu*.12+(ab==="kamikaze"?.6:0),
   sprint:ab==="turbo"?1.15:.8, mudF:ab==="mud"?.88:.5, waterF:ab==="mud"?.9:.55, weatherProof:ab==="crampons", slipProof:ab==="surefoot",
   rootsProof:ab==="roots", steepBonus:ab==="kamikaze"?.05:0, hintDist:ab==="flair"?20:10, pick:ab==="flair"?60:40, acc:ab==="relaunch"?2:1};}
+
+/* ================= Sponsors ================= */
+// marques en texte simple (pas de logo) ; shoe = fabricant de chaussures
+const SPONSORS=[
+  {id:"salomon",name:"Salomon",word:"SALOMON",bg:"#111111",fg:"#ffffff",shoe:true},
+  {id:"hoka",name:"Hoka One One",word:"HOKA ONE ONE",bg:"#1d4fd8",fg:"#ffffff",shoe:true},
+  {id:"saucony",name:"Saucony",word:"SAUCONY",bg:"#f4f1e8",fg:"#c8102e",shoe:true},
+  {id:"altra",name:"Altra",word:"ALTRA",bg:"#1f2f4a",fg:"#ffffff",shoe:true},
+  {id:"naak",name:"Naak",word:"NAAK",bg:"#0f3b2e",fg:"#f2c230"},
+  {id:"coca",name:"Coca-Cola",word:"Coca-Cola",bg:"#e41e2b",fg:"#ffffff",italic:true},
+  {id:"normal",name:"Normal",word:"normal",bg:"#ffffff",fg:"#111111",lower:true},
+];
+const sponsorById=id=>SPONSORS.find(s=>s.id===id);
+// arches : sponsor du départ et de l'arrivée de chaque parcours
+const ARCH_SPONSORS={chamonix:["salomon","hoka"],jura:["altra","naak"],pyrenees:["saucony","coca"],auvergne:["normal","salomon"],champex:["hoka","altra"],paysbasque:["naak","saucony"],calanques:["coca","normal"],ventoux:["salomon","coca"],verbier:["altra","hoka"]};
+// équipement par défaut de chaque héros : maillot, chaussures, casquette (null = sans)
+const HERO_SPONSORS={lina:["salomon","salomon",null],marco:["normal","altra","normal"],ines:["coca","hoka",null],hugo:["naak","saucony","naak"],maia:["saucony","saucony",null],
+  yanis:["altra","altra",null],chloe:["hoka","hoka","hoka"],baptiste:["coca","salomon","coca"],awa:["salomon","hoka",null],theo:["naak","altra","salomon"]};
+// produits du ravito
+const FOODS={
+  coca:{label:"Coca-Cola",brand:"coca",msg:"+35 d’énergie et coup de fouet",stam:35,boost:{kind:"fouet",t:8,label:"Coup de fouet"}},
+  barre:{label:"Barre de céréales Naak",brand:"naak",msg:"+30 d’énergie, récupération accélérée",stam:30,boost:{kind:"regen",t:20,label:"Récupération"}},
+  saucisson:{label:"Saucisson",brand:null,msg:"+25 d’énergie, bien calé : chutes plus courtes",stam:25,boost:{kind:"cale",t:30,label:"Bien calé"}},
+  iso:{label:"Boisson isotonique",brand:null,msg:"+55 d’énergie",stam:55},
+};

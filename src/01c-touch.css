@@ -1,13 +1,16 @@
 /* Contrôles tactiles */
 #touch{position:fixed;inset:auto 0 0 0;padding-bottom:calc(14px + env(safe-area-inset-bottom,0px));padding-left:max(14px,env(safe-area-inset-left,0px));padding-right:max(14px,env(safe-area-inset-right,0px));display:flex;justify-content:space-between;align-items:flex-end;pointer-events:none}
-#touch .grp{display:flex;gap:12px;pointer-events:auto}
+#touch .grp{display:flex;gap:12px;pointer-events:auto;align-items:flex-end}
+#touch .stack{display:flex;flex-direction:column;gap:10px}
+.tb.small{width:64px;height:64px;font-size:15px}
 .tb{width:76px;height:76px;border-radius:50%;border:2px solid rgba(255,255,255,.35);background:rgba(13,23,20,.45);color:var(--paper);font-family:var(--display);font-weight:900;font-size:18px;text-transform:uppercase;touch-action:none}
 .tb.on{background:rgba(242,194,48,.85);color:var(--sign-ink)}
 .tb.jump{width:88px;height:88px;background:rgba(242,194,48,.28)}
+@media (max-width:520px){#touch .grp{gap:8px}.tb{width:60px;height:60px;font-size:15px}.tb.small{width:54px;height:54px;font-size:13px}.tb.jump{width:80px;height:80px;font-size:17px}#touch .stack{gap:8px}}
 .icon-btn{position:fixed;top:calc(14px + env(safe-area-inset-top,0px));right:calc(16px + env(safe-area-inset-right,0px));z-index:5;background:var(--panel);border:1px solid var(--line);color:var(--paper);border-radius:4px;padding:6px 10px;font-weight:700;font-size:12px;letter-spacing:.08em;text-transform:uppercase}
 #pauseBtn{right:calc(98px + env(safe-area-inset-right,0px))}
 body.racing #muteBtn,body.racing #pauseBtn{top:auto;bottom:calc(16px + env(safe-area-inset-bottom,0px))}
-@media (pointer:coarse){body.racing #muteBtn,body.racing #pauseBtn{top:calc(118px + env(safe-area-inset-top,0px));bottom:auto}}
+@media (pointer:coarse){body.racing #muteBtn,body.racing #pauseBtn{top:calc(118px + env(safe-area-inset-top,0px));bottom:auto}body.racing .hud-bl{bottom:calc(150px + env(safe-area-inset-bottom,0px))}}
 #loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--ink);font-family:var(--display);font-weight:800;font-size:28px;text-transform:uppercase;letter-spacing:.06em;color:var(--sign)}
 @media (prefers-reduced-motion:reduce){#toast,#hint,.energy i{transition:none}}
 #loading{z-index:20}

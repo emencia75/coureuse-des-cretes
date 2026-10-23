@@ -21,8 +21,9 @@ function weatherOfDay(c){const d=new Date();const key=d.getFullYear()+"-"+d.getM
 function resolvedWeather(){return cfg.weather==="auto"?weatherOfDay(courseById(cfg.course)):cfg.weather;}
 
 // --- onglets
-function selectMenuTab(w){[["tabHero","paneHero"],["tabCourse","paneCourse"],["tabBoard","paneBoard"]].forEach(p=>{const on=p[0]===w;$(p[0]).setAttribute("aria-selected",on);$(p[1]).hidden=!on;});}
-$("tabHero").addEventListener("click",()=>selectMenuTab("tabHero"));$("tabCourse").addEventListener("click",()=>selectMenuTab("tabCourse"));$("tabBoard").addEventListener("click",()=>{selectMenuTab("tabBoard");renderBoards();});
+function selectMenuTab(w){[["tabHero","paneHero"],["tabCourse","paneCourse"],["tabBoard","paneBoard"],["tabSponsor","paneSponsor"]].forEach(p=>{const on=p[0]===w;$(p[0]).setAttribute("aria-selected",on);$(p[1]).hidden=!on;});}
+$("tabHero").addEventListener("click",()=>selectMenuTab("tabHero"));$("tabCourse").addEventListener("click",()=>selectMenuTab("tabCourse"));$("tabBoard").addEventListener("click",()=>{selectMenuTab("tabBoard");renderBoards();});$("tabSponsor").addEventListener("click",()=>{selectMenuTab("tabSponsor");renderSponsors();});
+$("courseCount").textContent=String(COURSES.length);
 
 // --- héros
 const STAT_LABELS=[["vit","Vitesse"],["agi","Agilité"],["saut","Saut"],["endu","Endurance"],["robu","Robustesse"]];
@@ -34,8 +35,12 @@ function renderHeroDetail(){const h=heroById(cfg.hero);const d=$("heroDetail");d
   const ab=el("div","ability");ab.append(el("b",null,h.ab.label),el("span",null,h.ab.desc));d.appendChild(ab);
   for(const s of STAT_LABELS){const row=el("div","statrow");row.appendChild(el("span",null,s[1]));const pips=el("div","pips");pips.setAttribute("role","img");pips.setAttribute("aria-label",s[1]+" "+h.stats[s[0]]+" sur 5");for(let i=1;i<=5;i++)pips.appendChild(el("i",i<=h.stats[s[0]]?"on":""));row.appendChild(pips);d.appendChild(row);}
   const card=$("heroCard");card.textContent="";card.append(el("div","k",h.nick),el("div","n",h.name.split(" ")[0]),el("div","c",h.ab.label+" · "+h.ab.desc));
+  const gr=heroGear(h,cfg.custom[h.id]);
+  renderSpChips("spTop",SPONSORS,gr.top,false,v=>setCustom("spTop",v));renderSpChips("spShoe",SPONSORS.filter(x=>x.shoe),gr.shoe,false,v=>setCustom("spShoe",v));renderSpChips("spCap",SPONSORS,gr.cap,true,v=>setCustom("spCap",v));
   const cu=cfg.custom[h.id]||{};renderSwatches("swTop",TOP_COLORS,cu.top!=null?cu.top:h.look.top,v=>setCustom("top",v));renderSwatches("swShoe",SHOE_COLORS,cu.shoe!=null?cu.shoe:h.look.shoe,v=>setCustom("shoe",v));}
 function renderSwatches(id,list,cur,fn){const box=$(id);box.textContent="";list.forEach(c=>{const b=el("button","sw");b.type="button";b.style.background=hexCss(c);b.setAttribute("aria-pressed",c===cur);b.setAttribute("aria-label","Couleur "+hexCss(c));b.addEventListener("click",()=>fn(c));box.appendChild(b);});}
+function renderSpChips(id,list,cur,allowNone,fn){const box=$(id);box.textContent="";const opts=(allowNone?[null]:[]).concat(list.map(x=>x.id));
+  opts.forEach(v=>{const sp=v&&sponsorById(v);const b=el("button","chip spc");b.type="button";b.setAttribute("aria-pressed",v===cur);if(sp){const sw=el("i");sw.style.background=sp.bg;b.append(sw,sp.name);}else b.textContent="Sans casquette";b.addEventListener("click",()=>fn(v===null?"":v));box.appendChild(b);});}
 function setCustom(k,v){const h=heroById(cfg.hero);cfg.custom[h.id]=Object.assign({},cfg.custom[h.id],{[k]:v});saveCfg();setPlayer(h,cfg.custom[h.id]);placeRunner(player);renderHeroGrid();renderHeroDetail();}
 function selectHero(id){cfg.hero=id;saveCfg();const h=heroById(id);setPlayer(h,cfg.custom[h.id]);player.s=-1;placeRunner(player);renderHeroGrid();renderHeroDetail();renderSummary();}
 
@@ -89,3 +94,23 @@ async function saveScore(rec){
       if(better||doc.name!==rec.name){doc.name=rec.name;await ref.set(doc);}
       return{improved:better,prev:prev?prev.time:null};}catch(e){/* écriture refusée : classement local */}}
   renderBoards();return{improved:rec.time<prevLocal,prev:isFinite(prevLocal)?prevLocal:null};}
+
+/* ================= Sponsors : emplacements et vues ================= */
+// un document par personne : impressions/<id> = {v:1, races, counts:{<marque>:n}}
+let impDocs=[];
+function localImp(){try{const o=JSON.parse(localStorage.getItem("cdc-imp")||"null");return o&&typeof o==="object"&&o.counts?o:{races:0,counts:{}};}catch(e){return{races:0,counts:{}};}}
+function impTotals(){const tot={},n={races:0};const add=o=>{if(!o||o.v!==1||!o.counts||typeof o.counts!=="object")return;n.races+=typeof o.races==="number"?o.races:0;for(const sp of SPONSORS){const v=o.counts[sp.id];if(typeof v==="number"&&isFinite(v)&&v>0)tot[sp.id]=(tot[sp.id]||0)+Math.min(v,1e7);}};
+  if(boardMode==="shared")impDocs.forEach(d=>add(d.data));else add(Object.assign({v:1},localImp()));return{tot:tot,races:n.races};}
+function placementsOf(id){const arches=Object.values(ARCH_SPONSORS).reduce((a,p)=>a+p.filter(x=>x===id).length,0);const heroes=HEROES.filter(h=>(HERO_SPONSORS[h.id]||[]).includes(id)).map(h=>h.name.split(" ")[0]);
+  const out=[];if(arches)out.push(arches+" arche"+(arches>1?"s":""));out.push("panneaux");if(heroes.length)out.push("équipe "+heroes.join(", "));if(id==="coca")out.push("canettes au ravito");if(id==="naak")out.push("barres au ravito");return out.join(" · ");}
+function renderSponsors(){const box=$("sponsorTable");box.textContent="";const T=impTotals();const t=el("table");t.innerHTML="<thead><tr><th>Marque</th><th>Emplacements</th><th class=\"r\">Vues</th></tr></thead>";const tb=el("tbody");
+  SPONSORS.slice().sort((a,b)=>(T.tot[b.id]||0)-(T.tot[a.id]||0)).forEach(sp=>{const tr=el("tr");const td=el("td");const wm=el("span","wm",sp.word);wm.style.background=sp.bg;wm.style.color=sp.fg;if(sp.italic)wm.style.fontStyle="italic";td.appendChild(wm);tr.appendChild(td);
+    tr.appendChild(el("td","nm",placementsOf(sp.id)));tr.appendChild(el("td","r num",fmtInt(T.tot[sp.id]||0)));tb.appendChild(tr);});t.appendChild(tb);box.appendChild(t);
+  $("sponsorSrc").textContent=(boardMode==="shared"?"Vues cumulées de tous les joueurs":"Vues enregistrées dans ce navigateur")+" · "+fmtInt(T.races)+" course"+(T.races>1?"s":"")+" terminée"+(T.races>1?"s":"")+".";}
+(async function connectImp(){try{if(!window.claude||typeof window.claude.use!=="function")return;const d=await window.claude.use("db");if(!d)return;
+  d.collection("impressions").limit(1000).onSnapshot(snap=>{impDocs=snap.docs.map(x=>({id:x.id,data:x.data()}));if(!$("paneSponsor").hidden)renderSponsors();},()=>{});}catch(e){}})();
+async function saveImpressions(counts){
+  const lo=localImp();lo.races=(lo.races||0)+1;for(const k in counts)lo.counts[k]=(lo.counts[k]||0)+counts[k];try{localStorage.setItem("cdc-imp",JSON.stringify(lo));}catch(e){}
+  if(boardMode==="shared"&&db&&uid){try{const ref=db.doc("impressions/"+uid);const snap=await ref.get();const old=snap.exists?snap.data():null;
+    const doc=old&&old.v===1&&old.counts&&typeof old.counts==="object"?{v:1,races:(old.races|0)+1,counts:Object.assign({},old.counts)}:{v:1,races:1,counts:{}};
+    for(const k in counts)if(sponsorById(k))doc.counts[k]=((typeof doc.counts[k]==="number"?doc.counts[k]:0)+counts[k]);doc.at=Date.now();await ref.set(doc);}catch(e){}}}

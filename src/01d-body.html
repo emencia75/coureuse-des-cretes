@@ -23,6 +23,7 @@
   <div class="hud-bl">
     <div class="lbl">Énergie · sprint</div>
     <div class="energy" id="hEnergyBox"><i id="hEnergy"></i></div>
+    <div class="bonus" id="hBonus" hidden></div>
     <div class="stats">
       <span>Reste <b id="hLeft">0,60</b> km</span>
       <span>Alt. <b id="hAlt">2 160</b> m</span>
@@ -41,8 +42,10 @@
     <button class="tb" id="tRight" aria-label="Droite">→</button>
   </div>
   <div class="grp">
-    <button class="tb" id="tBrake" aria-label="Freiner">Frein</button>
-    <button class="tb" id="tSprint" aria-label="Sprint">Sprint</button>
+    <div class="stack">
+      <button class="tb small" id="tSprint" aria-label="Sprint">Sprint</button>
+      <button class="tb small" id="tBrake" aria-label="Freiner">Frein</button>
+    </div>
     <button class="tb jump" id="tJump" aria-label="Sauter">Saut</button>
   </div>
 </div>
@@ -55,13 +58,14 @@
   <div class="mpanel">
     <div class="mhead">
       <div class="lbl2">Trail · descentes chronométrées</div>
-      <h1>Coureuse<br>des <em>Crêtes</em></h1>
+      <h1>Traileurs<br>des <em>Crêtes</em></h1>
       <div class="balisage" aria-hidden="true"></div>
     </div>
     <div class="tabs" role="tablist">
-      <button type="button" role="tab" id="tabHero" aria-selected="true"><b>1</b>Coureur</button>
-      <button type="button" role="tab" id="tabCourse" aria-selected="false"><b>2</b>Parcours</button>
-      <button type="button" role="tab" id="tabBoard" aria-selected="false"><b>3</b>Classement</button>
+      <button type="button" role="tab" id="tabHero" aria-selected="true">Héros</button>
+      <button type="button" role="tab" id="tabCourse" aria-selected="false">Parcours <b id="courseCount">9</b></button>
+      <button type="button" role="tab" id="tabBoard" aria-selected="false">Classement</button>
+      <button type="button" role="tab" id="tabSponsor" aria-selected="false">Sponsors</button>
     </div>
     <div class="mbody">
       <div id="paneHero">
@@ -73,10 +77,18 @@
           <div class="hdetail" id="heroDetail"></div>
         </div>
         <div class="sect">
-          <div class="lbl2">Maillot</div>
+          <div class="lbl2">Couleur du maillot</div>
           <div class="swatches" id="swTop"></div>
-          <div class="lbl2">Chaussures</div>
+          <div class="lbl2">Couleur des chaussures</div>
           <div class="swatches" id="swShoe"></div>
+        </div>
+        <div class="sect">
+          <div class="lbl2">Sponsor du maillot</div>
+          <div class="chips" id="spTop"></div>
+          <div class="lbl2">Marque des chaussures</div>
+          <div class="chips" id="spShoe"></div>
+          <div class="lbl2">Casquette</div>
+          <div class="chips" id="spCap"></div>
         </div>
         <div class="sect">
           <div class="lbl2">Commandes</div>
@@ -98,6 +110,15 @@
         <div class="sect">
           <div class="lbl2">Parcours · environ 2 minutes chacun</div>
           <div class="courses" id="courseList"></div>
+        </div>
+      </div>
+      <div id="paneSponsor" hidden>
+        <div class="sect">
+          <h2>Espaces sponsors</h2>
+          <p class="sp-intro">Sept marques réparties sur cinq emplacements : arches de départ et d’arrivée, panneaux le long du sentier, maillots, chaussures et casquettes, plus les produits du ravito. Chaque passage devant une arche ou un panneau, chaque course portée et chaque produit pris au ravito compte une vue.</p>
+          <div id="sponsorTable"></div>
+          <div class="src" id="sponsorSrc"></div>
+          <p class="disclaimer">Démonstration : les marques affichées illustrent les emplacements publicitaires et ne sont pas partenaires du jeu.</p>
         </div>
       </div>
       <div id="paneBoard" hidden>

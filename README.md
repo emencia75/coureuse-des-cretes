@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🏔️ Coureuse des Crêtes
+# 🏔️ Traileurs des Crêtes
 
 **Un jeu 3D de descente en trail, dans le navigateur.**
 Choisis ton héros, ton parcours et ta météo, puis dévale le sentier en 2 minutes face à sept rivaux, au milieu de la faune et des pièges de la montagne.
@@ -101,6 +101,36 @@ L’option **Météo du jour** tire la météo selon le climat de chaque parcour
 - 🪵 **Troncs, racines, rochers** : à sauter ou à contourner.
 - 💧 **Boue, grosses flaques, pierriers, verglas** : ils freinent et font déraper.
 - 🌬️ **Mistral** sur le Ventoux : des rafales qui te poussent sur le côté.
+
+---
+
+## 🥤 Le ravito
+
+À mi-parcours, deux rangées de produits à attraper au passage :
+
+| Produit | Effet |
+|---|---|
+| Coca-Cola | +35 d’énergie et **coup de fouet** : un peu plus de vitesse pendant 8 s |
+| Barre de céréales Naak | +30 d’énergie et **récupération** accélérée pendant 20 s |
+| Saucisson | +25 d’énergie, **bien calé** : chutes 40 % plus courtes pendant 30 s |
+| Boisson isotonique | +55 d’énergie |
+
+---
+
+## 📣 Espaces sponsors
+
+Sept marques (Salomon, Hoka One One, Saucony, Altra, Naak, Coca-Cola, Normal) sont réparties sur cinq emplacements :
+
+- **arches** de départ et d’arrivée de chaque parcours (bandeau et oriflammes) ;
+- **panneaux** publicitaires le long du sentier, et bâches sur la ligne droite d’arrivée ;
+- **maillots** (poitrine et dos du sac), **chaussures** (côté) et **casquettes** des coureurs, au choix dans le configurateur ;
+- **produits du ravito** (canettes, barres).
+
+L’onglet **Sponsors** du menu liste les emplacements de chaque marque et ses **vues** : chaque passage devant une arche ou un panneau, chaque course où la marque est portée et chaque produit pris au ravito compte une vue. Sur claude.ai, les vues sont cumulées pour tous les joueurs.
+
+Les sponsors se configurent dans `src/20-data.js` (`SPONSORS`, `ARCH_SPONSORS`, `HERO_SPONSORS`). Les marques sont affichées en simple texte, sans leurs logos.
+
+> **Démonstration.** Les marques citées illustrent les emplacements publicitaires et ne sont pas partenaires du jeu. Avant toute exploitation commerciale, il faut un accord avec chaque marque pour utiliser son nom et son logo.
 
 ---
 

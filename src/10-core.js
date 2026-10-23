@@ -52,3 +52,7 @@ function disposeTree(o){o.traverse(n=>{if(n.geometry)n.geometry.dispose();const 
 const grassDetail=canvasTex(512,(x,n)=>{x.fillStyle="#d8d8d8";x.fillRect(0,0,n,n);const R=mulberry32(11);
   for(let i=0;i<9000;i++){const v=150+R()*105|0;x.strokeStyle="rgba("+v+","+v+","+v+","+(.35+R()*.4)+")";x.lineWidth=1+R()*1.4;const px=R()*n,py=R()*n,l=3+R()*7,a=-Math.PI/2+(R()-.5)*.9;x.beginPath();x.moveTo(px,py);x.lineTo(px+Math.cos(a)*l,py+Math.sin(a)*l);x.stroke();}
   for(let i=0;i<260;i++){const v=110+R()*60|0;x.fillStyle="rgba("+v+","+v+","+v+",.35)";x.beginPath();x.arc(R()*n,R()*n,2+R()*7,0,7);x.fill();}});
+// marque en toutes lettres sur un aplat (texture d'emplacement sponsor)
+function drawWord(x,sp,X,Y,w,h,pad){x.fillStyle=sp.bg;x.fillRect(X,Y,w,h);x.fillStyle=sp.fg;x.textAlign="center";x.textBaseline="middle";
+  const fam=sp.italic?"Georgia,'Times New Roman',serif":FONT,wt=sp.italic?"italic 700 ":(sp.lower?"800 ":"900 ");let fs=h*.72;x.font=wt+fs+"px "+fam;while(x.measureText(sp.word).width>w-(pad||h*.4)&&fs>6){fs-=1;x.font=wt+fs+"px "+fam;}x.fillText(sp.word,X+w/2,Y+h/2+fs*.04);}
+function wordTex(sp,w,h){return textTex(w,h,(x)=>drawWord(x,sp,0,0,w,h));}

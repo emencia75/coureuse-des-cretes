@@ -34,7 +34,7 @@ function terrainAt(x,z){const s=nearestS(x,z);const i=idx(s);const d=(x-PX[i])*R
   return{y:base+h,d:d,s:s,ad:ad,rel:h};}
 function groundY(x,z){return terrainAt(x,z).y;}
 
-let world=null,terrainMesh=null,terrainBase=null,terrainSnowAmt=null,trailMesh=null,trailMaps=null,grassMesh=null,treeMeshes=[],cloudMat=null,clouds=[],fans=null,valley=null,seaFixedY=null,decorWater=null;
+let adSpots=[];let world=null,terrainMesh=null,terrainBase=null,terrainSnowAmt=null,trailMesh=null,trailMaps=null,grassMesh=null,treeMeshes=[],cloudMat=null,clouds=[],fans=null,valley=null,seaFixedY=null,decorWater=null;
 function dirtTex(base,pebble,snow){return canvasTex(512,(x,n)=>{x.fillStyle=snow?"#e9edf1":base;x.fillRect(0,0,n,n);const R=mulberry32(7);
   if(snow){for(let i=0;i<2600;i++){x.fillStyle="rgba(180,195,210,"+(.15+R()*.3)+")";x.beginPath();x.arc(R()*n,R()*n,R()*3+.5,0,7);x.fill();}
     x.strokeStyle="rgba(110,90,70,.45)";x.lineWidth=9;for(let i=0;i<4;i++){x.beginPath();const px=120+R()*270;x.moveTo(px,0);for(let y=0;y<=n;y+=16)x.lineTo(px+Math.sin(y*.025+i)*9,y);x.stroke();}return;}
@@ -118,27 +118,40 @@ function buildWorld(c){
   cloudMat=new THREE.MeshStandardMaterial({color:0xffffff,roughness:1,flatShading:true,transparent:true,opacity:.92});
   for(let i=0;i<16;i++){const grp=new THREE.Group();for(let k=0;k<5;k++){const b=new THREE.Mesh(new THREE.IcosahedronGeometry(10+R0()*12,1),cloudMat);b.position.set(k*14-28+R0()*6,R0()*6,R0()*10);b.scale.y=.55;grp.add(b);}
     samp(R0()*L);grp.position.set(SP.x+(R0()-.5)*900,SP.y+150+R0()*120,SP.z+(R0()-.5)*300);grp.userData.v=1.5+R0()*2;world.add(grp);clouds.push(grp);}
-  buildDecor(R0);
+  adSpots=[];buildDecor(R0);adSpots.sort((a,b)=>a.s-b.s);
 }
 
 const wood=()=>new THREE.MeshStandardMaterial({color:0x6b4b2e,roughness:.9,flatShading:true});
 function buildDecor(R0){
-  function arch(s,label,bg){const g=new THREE.Group();placeOnTrail(g,s,0,0);const postG=new THREE.CylinderGeometry(.12,.12,4.2,8);const pm=new THREE.MeshStandardMaterial({color:0xf4f1e8,roughness:.6});
+  function arch(s,label,bg,spId){const g=new THREE.Group();placeOnTrail(g,s,0,0);const sp=sponsorById(spId);const postG=new THREE.CylinderGeometry(.12,.12,4.2,8);const pm=new THREE.MeshStandardMaterial({color:0xf4f1e8,roughness:.6});
     for(const sd of[-1,1]){const p=new THREE.Mesh(postG,pm);p.position.set(sd*(W+.7),2.1,0);p.castShadow=true;g.add(p);}
-    const tex=textTex(1024,160,(x,w,h)=>{x.fillStyle=bg;x.fillRect(0,0,w,h);x.fillStyle="#f4f1e8";for(let i=0;i<w;i+=64){x.fillRect(i,0,32,14);x.fillRect(i+32,h-14,32,14);}x.fillStyle="#fff";x.font="900 104px "+FONT;x.textAlign="center";x.textBaseline="middle";x.fillText(label,w/2,h/2+6);});
+    // bandeau : l'étape à gauche, le sponsor de l'arche à droite
+    const tex=textTex(1024,160,(x,w,h)=>{x.fillStyle=bg;x.fillRect(0,0,w,h);x.fillStyle="#f4f1e8";for(let i=0;i<w;i+=64){x.fillRect(i,0,32,14);x.fillRect(i+32,h-14,32,14);}x.fillStyle="#fff";x.font="900 96px "+FONT;x.textAlign="center";x.textBaseline="middle";x.fillText(label,w*.31,h/2+6);
+      x.fillStyle="#f4f1e8";x.fillRect(w*.6,18,w*.38,h-36);drawWord(x,sp,w*.6+5,23,w*.38-10,h-46);});
+    for(const sd of[-1,1]){const fl=new THREE.Mesh(new THREE.PlaneGeometry(.55,1.5),new THREE.MeshStandardMaterial({map:wordTex(sp,256,128),side:THREE.DoubleSide,roughness:.8}));fl.position.set(sd*(W+.7),1.6,.13);fl.rotation.z=sd*Math.PI/2;g.add(fl);}
+    adSpots.push({s:s,brand:spId,kind:"arche"});
     const ban=new THREE.Mesh(new THREE.PlaneGeometry(2*W+1.6,1.05),new THREE.MeshStandardMaterial({map:tex,side:THREE.DoubleSide,roughness:.8}));ban.position.set(0,3.7,0);g.add(ban);world.add(g);}
   function signpost(s,top,bottom){const g=new THREE.Group();placeOnTrail(g,s,-W-1.3,0);const post=new THREE.Mesh(new THREE.BoxGeometry(.12,2.2,.12),wood());post.position.y=1.1;post.castShadow=true;g.add(post);
     const tex=textTex(512,160,(x,w,h)=>{x.fillStyle="#f2c230";x.beginPath();x.moveTo(0,0);x.lineTo(w-60,0);x.lineTo(w,h/2);x.lineTo(w-60,h);x.lineTo(0,h);x.fill();x.fillStyle="#1a1608";let fs=62;x.font="900 "+fs+"px "+FONT;while(x.measureText(top).width>w-90&&fs>30){fs-=2;x.font="900 "+fs+"px "+FONT;}x.textBaseline="top";x.fillText(top,24,16);x.font="700 40px "+FONT;x.fillText(bottom,24,92);});
     const plate=new THREE.Mesh(new THREE.PlaneGeometry(1.6,.5),new THREE.MeshStandardMaterial({map:tex,side:THREE.DoubleSide,roughness:.7}));plate.position.set(.7,1.85,0);plate.rotation.y=-Math.PI/2+.5;g.add(plate);world.add(g);}
   {const geoW=new THREE.BoxGeometry(.13,.16,.13);const mw=new THREE.MeshStandardMaterial({color:0xf4f1e8}),mr=new THREE.MeshStandardMaterial({color:0xd6392b}),wm=wood();const postG=new THREE.BoxGeometry(.12,1,.12);
     for(let s=40,i=0;s<L;s+=55,i++){const g=new THREE.Group();placeOnTrail(g,s,(i%2?1:-1)*(W+1.05),0);const p=new THREE.Mesh(postG,wm);p.position.y=.5;g.add(p);const a=new THREE.Mesh(geoW,mw);a.position.y=1.04;g.add(a);const b=new THREE.Mesh(geoW,mr);b.position.y=.88;g.add(b);world.add(g);}}
-  arch(0,"DÉPART","#1f3d33");arch(L,"ARRIVÉE","#d6392b");
+  const AS=ARCH_SPONSORS[C.id]||["salomon","hoka"];arch(0,"DÉPART","#1f3d33",AS[0]);arch(L,"ARRIVÉE","#d6392b",AS[1]);
+  // panneaux publicitaires le long du sentier, côté montagne
+  {const order=SPONSORS.map(x=>x.id);const off=COURSES.indexOf(C);const postM=new THREE.MeshStandardMaterial({color:0x8a9096,roughness:.6});let i=0;
+    for(let s=70;s<L-30;s+=78,i++){if(Math.abs(s-RAVITO)<20)continue;const sp=sponsorById(order[(i+off)%order.length]);const g=new THREE.Group();placeOnTrail(g,s,-W-2.3,0);
+      for(const px of[-1,1]){const p=new THREE.Mesh(new THREE.CylinderGeometry(.05,.05,2.1,6),postM);p.position.set(px*1.1,1.05,0);g.add(p);}
+      const bd=new THREE.Mesh(new THREE.PlaneGeometry(2.6,.95),new THREE.MeshStandardMaterial({map:wordTex(sp,512,188),side:THREE.DoubleSide,roughness:.7}));bd.position.y=1.6;g.add(bd);
+      const fr=new THREE.Mesh(new THREE.BoxGeometry(2.7,1.05,.04),postM);fr.position.set(0,1.6,-.03);g.add(fr);g.rotation.y+=.45;world.add(g);adSpots.push({s:s,brand:sp.id,kind:"panneau"});}
+    // bâches le long de la ligne droite d'arrivée
+    for(let s=L-48,j=0;s<L+20;s+=6,j++)for(const sd of[-1,1]){const sp=sponsorById(order[(j+(sd>0?3:0)+off)%order.length]);const g=new THREE.Group();placeOnTrail(g,s,sd*(W+.75),0);
+      const bn=new THREE.Mesh(new THREE.PlaneGeometry(5.6,.7),new THREE.MeshStandardMaterial({map:wordTex(sp,512,64),side:THREE.DoubleSide,roughness:.8}));bn.position.y=.45;bn.rotation.y=Math.PI/2;g.add(bn);world.add(g);}}
   for(const f of[.3,.72]){const s=Math.round(L*f);signpost(s,C.to.toUpperCase(),fmtKm(L-s,1)+" km  ·  alt. "+fmtInt(ALT0+cy(s)-cy(0))+" m");}
   // ravito
   {const g=new THREE.Group();placeOnTrail(g,RAVITO,-W-2.6,0);const roof=new THREE.Mesh(new THREE.BoxGeometry(3.2,.12,3.2),new THREE.MeshStandardMaterial({color:0xd6392b,roughness:.7}));roof.position.y=2.5;roof.castShadow=true;g.add(roof);
     const pm=new THREE.MeshStandardMaterial({color:0xdddddd});for(const a of[[-1.5,-1.5],[1.5,-1.5],[-1.5,1.5],[1.5,1.5]]){const p=new THREE.Mesh(new THREE.CylinderGeometry(.05,.05,2.5,6),pm);p.position.set(a[0],1.25,a[1]);g.add(p);}
     const table=new THREE.Mesh(new THREE.BoxGeometry(.8,.08,2.6),new THREE.MeshStandardMaterial({color:0xf4f1e8}));table.position.set(1.1,.85,0);g.add(table);
-    for(let i=0;i<8;i++){const cp=new THREE.Mesh(new THREE.CylinderGeometry(.05,.05,.14,8),new THREE.MeshStandardMaterial({color:i%2?0x3aa0e0:0xf2c230}));cp.position.set(1.1,.96,-1.1+i*.3);g.add(cp);}world.add(g);
+    ["coca","barre","saucisson","iso","coca","barre","iso","saucisson"].forEach((k,i)=>{const it=foodMesh(k,1);it.position.set(1.1,.95+(k==="iso"?.06:k==="coca"?.04:.03),-1.1+i*.31);if(k==="barre"||k==="saucisson")it.rotation.y=Math.PI/2;g.add(it);});world.add(g);
     const bg=new THREE.Group();placeOnTrail(bg,RAVITO-6,0,0);const tex=textTex(1024,140,(x,w,h)=>{x.fillStyle="#f2c230";x.fillRect(0,0,w,h);x.fillStyle="#1a1608";x.font="900 96px "+FONT;x.textAlign="center";x.textBaseline="middle";x.fillText("RAVITO  ·  "+fmtKm(RAVITO)+" KM",w/2,h/2+4);});
     const wm=wood();for(const sd of[-1,1]){const p=new THREE.Mesh(new THREE.CylinderGeometry(.08,.08,3.6,6),wm);p.position.set(sd*(W+.6),1.8,0);bg.add(p);}const ban=new THREE.Mesh(new THREE.PlaneGeometry(2*W+1.2,.8),new THREE.MeshStandardMaterial({map:tex,side:THREE.DoubleSide}));ban.position.y=3.3;bg.add(ban);world.add(bg);}
   // spectateurs

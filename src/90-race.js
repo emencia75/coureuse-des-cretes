@@ -2,21 +2,23 @@
 let camGuardT=0,camGround=-1e9;
 let state="menu",raceT=0,countT=0,finishWait=0,lastRank=8,shake=0,menuT=0,lastBeep=4,pausedFrom=null;
 let gustT=8,gustOn=0,gustDir=1;
+// vues sponsors de la course en cours (envoyées à l'arrivée)
+let imp={},adI=0;function impress(brand){if(brand)imp[brand]=(imp[brand]||0)+1;}
 const camPos=new THREE.Vector3(),camLook=new THREE.Vector3(),tmpV=new THREE.Vector3(),tmpL=new THREE.Vector3(),camRight=new THREE.Vector3();
 const fe=r=>r.hero.sex==="F"?"e":"";
 function resetRace(){
   const opp=runners.filter(r=>!r.isPlayer);const order=opp.map((_,i)=>i);for(let i=order.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));const t=order[i];order[i]=order[j];order[j]=t;}
   const skills=[.985,.975,.965,.955,.945,.935,.925];
-  runners.forEach(r=>{r.v=0;r.lv=0;r.h=0;r.vy=0;r.stam=100;r.fallT=0;r.fallK=0;r.stumT=0;r.invT=0;r.falls=0;r.finished=false;r.finishT=Infinity;r.hi=0;r.sprintT=0;r.steer=0;r.thinkT=0;r.place=0;r.fallDur=r.P.fallT;
+  runners.forEach(r=>{r.v=0;r.lv=0;r.h=0;r.vy=0;r.stam=100;r.fallT=0;r.fallK=0;r.stumT=0;r.invT=0;r.falls=0;r.finished=false;r.finishT=Infinity;r.hi=0;r.sprintT=0;r.steer=0;r.thinkT=0;r.place=0;r.fallDur=r.P.fallT;r.boost=null;
     if(r.isPlayer){r.s=-1;r.d=0;}
     else{const k=order[opp.indexOf(r)];r.s=3+k*4.2+Math.random()*1.5;r.d=((k%3)-1)*1.8+(Math.random()-.5)*.4;r.pref=(Math.random()-.5)*3.6;r.skill=skills[k]*(.99+Math.random()*.02);r.err=.025+(1-skills[k])*.9;
       r.miss=new Set();hazards.forEach(h=>{if(h.type!=="bottle"&&h.type!=="scree"&&Math.random()<r.err)r.miss.add(h.id);});}
     r.tD=r.d;});
   bottles.forEach(b=>{b.taken=false;b.m.visible=true;});dyns.forEach(resetDyn);
-  raceT=0;lastRank=8;finishWait=0;gustT=6+Math.random()*5;gustOn=0;
+  raceT=0;lastRank=8;finishWait=0;gustT=6+Math.random()*5;gustOn=0;imp={};adI=0;
 }
 function rankOrder(){return runners.slice().sort((a,b)=>{if(a.finished&&b.finished)return a.finishT-b.finishT;if(a.finished)return-1;if(b.finished)return 1;return b.s-a.s;});}
-function fall(r,why){r.fallDur=r.P.fallT;r.fallT=r.fallDur;r.invT=r.fallDur+1.2;r.falls++;r.vy=0;r.h=0;if(r.isPlayer){sfxThud();shake=.6;toast("Chute !",why);}}
+function fall(r,why){r.fallDur=r.P.fallT*(r.boost&&r.boost.kind==="cale"?.6:1);r.fallT=r.fallDur;r.invT=r.fallDur+1.2;r.falls++;r.vy=0;r.h=0;if(r.isPlayer){sfxThud();shake=.6;toast("Chute !",why);}}
 function stumble(r,why){r.stumT=.55;r.invT=.9;r.v*=.5;if(r.isPlayer){sfxStep(.6);shake=.25;toast("Trébuche !",why);}}
 const BLOCK={rock:1,stand:1,cross:1,boulder:1};
 
@@ -37,6 +39,7 @@ function aiThink(r,dt){
 
 function updateRunner(r,dt){
   const P=r.P;
+  if(r.boost){r.boost.t-=dt;if(r.boost.t<=0)r.boost=null;}
   while(r.hi<hazards.length&&hazards[r.hi].s<r.s-12)r.hi++;
   if(r.invT>0)r.invT-=dt;
   samp(r.s);const fz=SP.fz,k=SP.k,g=SP.g;
@@ -49,12 +52,14 @@ function updateRunner(r,dt){
   let vt=baseVt(g)*P.vMul*(r.isPlayer?1:r.skill)*(P.weatherProof?1:WX.speed);if(g>.22)vt*=1+P.steepBonus;
   if(!r.isPlayer&&!r.finished){const gap=r.s-player.s;if(gap>40)vt*=.95;else if(gap<-25)vt*=1.05;}
   if(r.finished){vt=Math.max(0,(L+26+(r.bib%5)*2.5-r.s)*.3);sprint=false;}
-  if(sprint){vt+=P.sprint;r.stam=Math.max(0,r.stam-P.drain*dt);}else r.stam=Math.min(100,r.stam+P.regen*dt);
+  if(r.boost&&r.boost.kind==="fouet")vt+=.35;
+  if(sprint){vt+=P.sprint;r.stam=Math.max(0,r.stam-P.drain*dt);}else r.stam=Math.min(100,r.stam+P.regen*dt*(r.boost&&r.boost.kind==="regen"?1.6:1));
   if(!r.finished)vt=Math.min(vt,6.45); // plafond réaliste : ~23 km/h
   if(brake)vt*=.5;
   const off=Math.abs(r.d)>W+.1;if(off)vt=Math.min(vt,2.0);
   let mud=false,scree=false,water=false;
   for(let j=r.hi;j<hazards.length;j++){const h=hazards[j];if(h.s>r.s+h.depth/2+.4)break;if(Math.abs(r.s-h.s)>h.depth/2+.25)continue;if(r.d+.24<h.d0||r.d-.24>h.d1)continue;
+    if(h.type==="food"){if(r.isPlayer&&!h.taken){h.taken=true;h.m.visible=false;const F=FOODS[h.item];r.stam=Math.min(100,r.stam+F.stam);if(F.boost)r.boost={kind:F.boost.kind,t:F.boost.t,label:F.boost.label};sfxPick();toast(F.label,F.msg);impress(F.brand);}continue;}
     if(h.type==="bottle"){if(r.isPlayer&&!h.taken){h.taken=true;h.m.visible=false;r.stam=Math.min(100,r.stam+P.pick);sfxPick();toast("Ravito","+"+P.pick+" d’énergie");}continue;}
     if(r.h>(h.clear||0))continue;if(h.dyn&&!h.live)continue;
     if(h.type==="mud")mud=true;else if(h.type==="scree")scree=true;else if(h.type==="water")water=true;
@@ -93,6 +98,7 @@ const HINTS={log:"Tronc · saute",roots:"Racines · saute",marmot:"Marmotte · s
 function updateHUD(){
   const order=rankOrder();const rank=order.indexOf(player)+1;const hp=$("hPos");hp.textContent="";hp.append(String(rank));hp.append(el("sup",null,ord(rank)),el("small",null,"/"+runners.length));
   $("hTime").textContent=fmtTime(player.finished?player.finishT:raceT);$("hSpeed").firstChild.nodeValue=String(Math.round(player.v*3.6));
+  const hb=$("hBonus");if(player.boost){hb.hidden=false;hb.textContent=player.boost.label+" · "+Math.ceil(player.boost.t)+" s";}else hb.hidden=true;
   $("hEnergy").style.transform="scaleX("+(player.stam/100).toFixed(3)+")";$("hEnergyBox").classList.toggle("low",player.stam<20);
   $("hLeft").textContent=fmtKm(Math.max(0,L-player.s));const alt=ALT0+cy(clamp(player.s,0,L))-cy(0);$("hAlt").textContent=fmtInt(alt);$("hDminus").textContent=fmtInt(ALT0-alt);
   runners.forEach((r,i)=>{if(dots[i])dots[i].style.left=(clamp(r.s/L,0,1)*100).toFixed(2)+"%";});
@@ -114,6 +120,7 @@ function startRace(){initAudio();initRain();if(AC&&AC.state==="suspended")AC.res
 function onPlayerFinish(){state="finished";finishWait=3;const order=rankOrder();const place=order.indexOf(player)+1;player.place=place;
   toast("Arrivée !",place+ord(place)+" sur "+runners.length+" · "+fmtTime(player.finishT));sfxBeep(880,.25);
   const rec={name:playerName(),hero:player.hero.id,course:C.id,weather:WXID,time:Math.round(player.finishT*100)/100,place:place,falls:player.falls,at:Date.now()};
+  for(const r of runners){impress(r.gear.top);impress(r.gear.shoe);impress(r.gear.cap);}saveImpressions(imp);
   saveScore(rec).then(res=>{const b=$("eBadge");b.textContent="";if(res.improved)b.appendChild(el("span","badge",res.prev?"Nouveau record perso sur "+C.name+" · "+fmtTime(res.prev)+" battu":"Premier chrono inscrit sur "+C.name));renderBoards();});}
 function showEnd(){state="ended";setScreen("end");$("hud").hidden=true;$("touch").hidden=true;$("pauseBtn").hidden=true;document.body.classList.remove("racing");
   const p=player.place||8;const er=$("eRank");er.textContent="";er.append(String(p),el("sup",null,ord(p)),el("small",null," / "+runners.length));
@@ -138,6 +145,7 @@ function frame(now){requestAnimationFrame(frame);let dt=(now-last)/1000;last=now
   const simulate=state==="race"||state==="finished"||state==="ended";
   if(simulate){raceT+=dt;
     if(C.wind&&state==="race"){if(gustOn>0)gustOn-=dt;else{gustT-=dt;if(gustT<=0){gustOn=1.6;gustT=6+Math.random()*6;gustDir=Math.random()<.5?-1:1;warn("Rafale de mistral !");}}}
+    while(adI<adSpots.length&&adSpots[adI].s<=player.s){impress(adSpots[adI].brand);adI++;}
     for(const h of dyns)if(Math.abs(h.s-player.s)<140)updDyn(h,dt);for(const r of runners)updateRunner(r,dt);collide();}
   else for(const r of runners)r.phase+=dt*1.2;
   jumpPressed=false;
