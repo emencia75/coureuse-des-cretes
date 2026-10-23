@@ -1,0 +1,166 @@
+@media (prefers-reduced-motion:reduce){#toast,#hint,.energy i{transition:none}}
+</style>
+
+<canvas id="c" aria-label="Vue 3D de la course"></canvas>
+<div class="vignette"></div>
+<div id="flash"></div>
+
+<div id="hud" hidden>
+  <div class="hud-tl">
+    <div class="lbl">Position</div>
+    <div class="pos" id="hPos">8<sup>e</sup><small>/8</small></div>
+  </div>
+  <div class="hud-tc">
+    <div class="lbl">Temps</div>
+    <div class="time num" id="hTime">0:00.00</div>
+    <div class="track" id="hTrack"><span class="rv" style="left:50%">RAVITO</span></div>
+    <div class="where" id="hWhere">Chamonix · Beau temps</div>
+  </div>
+  <div class="hud-tr">
+    <div class="lbl">Vitesse</div>
+    <div class="speed" id="hSpeed">0<span>km/h</span></div>
+  </div>
+  <div class="hud-bl">
+    <div class="lbl">Énergie · sprint</div>
+    <div class="energy" id="hEnergyBox"><i id="hEnergy"></i></div>
+    <div class="stats">
+      <span>Reste <b id="hLeft">0,60</b> km</span>
+      <span>Alt. <b id="hAlt">2 160</b> m</span>
+      <span>D− <b id="hDminus">0</b> m</span>
+    </div>
+  </div>
+</div>
+<div id="toast"></div>
+<div id="hint"></div>
+<div id="warn"></div>
+<div id="count" hidden></div>
+
+<div id="touch" hidden>
+  <div class="grp">
+    <button class="tb" id="tLeft" aria-label="Gauche">←</button>
+    <button class="tb" id="tRight" aria-label="Droite">→</button>
+  </div>
+  <div class="grp">
+    <button class="tb" id="tBrake" aria-label="Freiner">Frein</button>
+    <button class="tb" id="tSprint" aria-label="Sprint">Sprint</button>
+    <button class="tb jump" id="tJump" aria-label="Sauter">Saut</button>
+  </div>
+</div>
+
+<button class="icon-btn" id="muteBtn" type="button">Son : oui</button>
+<button class="icon-btn" id="pauseBtn" type="button" hidden>Pause</button>
+
+<!-- Menu : configurateur -->
+<div id="menu" hidden>
+  <div class="mpanel">
+    <div class="mhead">
+      <div class="lbl2">Trail · descentes chronométrées</div>
+      <h1>Coureuse<br>des <em>Crêtes</em></h1>
+      <div class="balisage" aria-hidden="true"></div>
+    </div>
+    <div class="tabs" role="tablist">
+      <button type="button" role="tab" id="tabHero" aria-selected="true"><b>1</b>Coureur</button>
+      <button type="button" role="tab" id="tabCourse" aria-selected="false"><b>2</b>Parcours</button>
+      <button type="button" role="tab" id="tabBoard" aria-selected="false"><b>3</b>Classement</button>
+    </div>
+    <div class="mbody">
+      <div id="paneHero">
+        <div class="sect">
+          <div class="lbl2">Choisis ton héros</div>
+          <div class="heroes" id="heroGrid"></div>
+        </div>
+        <div class="sect">
+          <div class="hdetail" id="heroDetail"></div>
+        </div>
+        <div class="sect">
+          <div class="lbl2">Maillot</div>
+          <div class="swatches" id="swTop"></div>
+          <div class="lbl2">Chaussures</div>
+          <div class="swatches" id="swShoe"></div>
+        </div>
+        <div class="sect">
+          <div class="lbl2">Commandes</div>
+          <div class="keys">
+            <kbd>← →</kbd><span>ou <kbd>A</kbd>/<kbd>D</kbd> (<kbd>Q</kbd>/<kbd>D</kbd> en AZERTY) : se déplacer</span>
+            <kbd>Espace</kbd><span>sauter troncs, racines, marmottes</span>
+            <kbd>↑</kbd><span>sprinter (consomme l’énergie)</span>
+            <kbd>↓</kbd><span>freiner avant un virage</span>
+            <kbd>Échap</kbd><span>pause</span>
+          </div>
+        </div>
+      </div>
+      <div id="paneCourse" hidden>
+        <div class="sect">
+          <div class="lbl2">Météo</div>
+          <div class="chips" id="weatherChips"></div>
+          <div class="weathernote" id="weatherNote"></div>
+        </div>
+        <div class="sect">
+          <div class="lbl2">Parcours · environ 2 minutes chacun</div>
+          <div class="courses" id="courseList"></div>
+        </div>
+      </div>
+      <div id="paneBoard" hidden>
+        <div class="sect">
+          <h2 id="boardTitle">Classement</h2>
+          <div id="boardMenu"></div>
+          <div class="src" id="boardSrc"></div>
+        </div>
+      </div>
+    </div>
+    <div class="mfoot">
+      <div class="summary" id="summary"></div>
+      <div class="row">
+        <input id="pseudo" maxlength="16" autocomplete="off" spellcheck="false" placeholder="Ton nom au classement" aria-label="Ton nom au classement">
+        <button class="btn" id="startBtn" type="button">Départ</button>
+      </div>
+    </div>
+  </div>
+  <div class="herocard" id="heroCard"></div>
+</div>
+
+<!-- Fin de course -->
+<div class="overlay" id="end" hidden>
+  <div class="sheet">
+    <div>
+      <div class="lbl" id="eWhere">Arrivée</div>
+      <div class="result-big" id="eRank">3<sup>e</sup><small> / 8</small></div>
+      <div class="result-row">
+        <div><span class="lbl">Temps</span><b id="eTime">0:00.00</b></div>
+        <div><span class="lbl">Chutes</span><b id="eFalls">0</b></div>
+        <div><span class="lbl">Vitesse moy.</span><b id="eAvg">0 km/h</b></div>
+      </div>
+      <div id="eBadge"></div>
+      <div class="btns">
+        <button class="btn" id="againBtn" type="button">Rejouer</button>
+        <button class="btn ghost" id="menuBtn" type="button">Changer de héros ou de parcours</button>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="tabs" role="tablist" style="margin-bottom:12px">
+        <button type="button" role="tab" id="tabRace" aria-selected="true">Cette course</button>
+        <button type="button" role="tab" id="tabAll" aria-selected="false">Classement du parcours</button>
+      </div>
+      <div id="raceList"></div>
+      <div id="boardEnd" hidden></div>
+    </div>
+  </div>
+</div>
+
+<!-- Pause -->
+<div class="overlay" id="pause" hidden>
+  <div class="panel" style="max-width:360px;width:100%;text-align:center">
+    <h2>Pause</h2>
+    <div class="btns" style="justify-content:center">
+      <button class="btn" id="resumeBtn" type="button">Reprendre</button>
+      <button class="btn ghost" id="quitBtn" type="button">Abandonner</button>
+    </div>
+  </div>
+</div>
+
+<div id="loading">Balisage du sentier…</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+"use strict";

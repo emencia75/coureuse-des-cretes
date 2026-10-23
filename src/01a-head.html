@@ -1,0 +1,59 @@
+<title>Coureuse des Crêtes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800;900&family=Barlow:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: plein écran 3D, HUD ancré aux coins comme un jeu de course, panneaux façon balisage de sentier (jaune + rouge/blanc GR). */
+:root{
+  --ink:#0e1916;
+  --panel:rgba(13,23,20,.86);
+  --panel-solid:#13201c;
+  --paper:#f4f1e8;
+  --muted:#aeb8ad;
+  --sign:#f2c230;
+  --sign-ink:#1a1608;
+  --gr:#d6392b;
+  --line:rgba(244,241,232,.16);
+  --good:#5fd38a;
+  --display:"Big Shoulders Display","Arial Narrow",Impact,sans-serif;
+  --body:"Barlow","Segoe UI",system-ui,sans-serif;
+  color-scheme:dark;
+}
+[hidden]{display:none!important}
+html,body{height:100%;overflow:hidden}
+body{background:var(--ink);color:var(--paper);font-family:var(--body);-webkit-user-select:none;user-select:none;touch-action:none}
+canvas#c{position:fixed;inset:0;width:100%;height:100%;display:block}
+.vignette{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 55%,transparent 55%,rgba(5,10,8,.55) 100%)}
+.num{font-family:var(--display);font-variant-numeric:tabular-nums;letter-spacing:.01em}
+
+/* HUD */
+#hud{position:fixed;inset:0;pointer-events:none}
+.hud-tl{position:absolute;top:calc(14px + env(safe-area-inset-top,0px));left:calc(16px + env(safe-area-inset-left,0px))}
+.hud-tr{position:absolute;top:calc(14px + env(safe-area-inset-top,0px));right:calc(16px + env(safe-area-inset-right,0px));text-align:right}
+.hud-tc{position:absolute;top:calc(14px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);text-align:center;width:min(46vw,460px)}
+.hud-bl{position:absolute;bottom:calc(16px + env(safe-area-inset-bottom,0px));left:calc(16px + env(safe-area-inset-left,0px))}
+.pos{font-family:var(--display);font-weight:900;font-size:clamp(48px,9vw,92px);line-height:.85;text-shadow:0 3px 18px rgba(0,0,0,.45)}
+.pos sup{font-size:.38em;vertical-align:top;margin-left:2px}
+.pos small{font-size:.36em;color:var(--muted);font-weight:700;margin-left:6px}
+.lbl{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);text-shadow:0 1px 6px rgba(0,0,0,.6)}
+.time{font-size:clamp(26px,4.2vw,40px);font-weight:800;text-shadow:0 2px 12px rgba(0,0,0,.5)}
+.speed{font-family:var(--display);font-weight:900;font-size:clamp(40px,7vw,72px);line-height:.85;text-shadow:0 3px 18px rgba(0,0,0,.45)}
+.speed span{font-size:.32em;color:var(--muted);margin-left:4px}
+.track{position:relative;height:6px;margin-top:8px;border-radius:3px;background:repeating-linear-gradient(90deg,var(--gr) 0 18px,var(--paper) 18px 36px);opacity:.9}
+.track .dot{position:absolute;top:50%;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%;background:var(--paper);border:2px solid var(--ink)}
+.track .dot.me{width:15px;height:15px;margin:-7.5px 0 0 -7.5px;background:var(--sign);z-index:2}
+.track .rv{position:absolute;top:-14px;font-size:9px;font-weight:700;letter-spacing:.1em;color:var(--muted);transform:translateX(-50%)}
+.energy{width:min(42vw,240px);height:10px;border-radius:5px;background:rgba(255,255,255,.14);overflow:hidden;margin-top:5px;border:1px solid rgba(255,255,255,.18)}
+.energy i{display:block;height:100%;width:100%;background:var(--sign);transform-origin:left;transition:background .2s}
+.energy.low i{background:var(--gr)}
+.stats{margin-top:9px;font-size:13px;font-weight:600;color:var(--paper);text-shadow:0 1px 6px rgba(0,0,0,.7);display:flex;gap:14px;flex-wrap:wrap}
+.stats b{font-family:var(--display);font-size:17px;font-weight:800;font-variant-numeric:tabular-nums}
+#toast{position:fixed;left:50%;top:30%;transform:translate(-50%,-50%);pointer-events:none;text-align:center;font-family:var(--display);font-weight:900;font-size:clamp(28px,5vw,54px);text-transform:uppercase;text-shadow:0 4px 24px rgba(0,0,0,.6);opacity:0;transition:opacity .25s;white-space:nowrap}
+#toast.show{opacity:1}
+#toast small{display:block;font-family:var(--body);font-weight:600;font-size:.34em;letter-spacing:.12em;color:var(--paper)}
+#hint{position:fixed;left:50%;bottom:calc(22% + env(safe-area-inset-bottom,0px));transform:translateX(-50%);pointer-events:none;background:var(--sign);color:var(--sign-ink);font-weight:700;font-size:14px;letter-spacing:.08em;text-transform:uppercase;padding:6px 12px;border-radius:3px;opacity:0;transition:opacity .15s}
+#hint.show{opacity:1}
+#warn{position:fixed;left:50%;top:calc(120px + env(safe-area-inset-top,0px));transform:translateX(-50%);pointer-events:none;background:var(--gr);color:#fff;font-family:var(--display);font-weight:900;font-size:clamp(20px,3.4vw,30px);letter-spacing:.06em;text-transform:uppercase;padding:6px 16px;border-radius:3px;opacity:0;transition:opacity .15s;white-space:nowrap}
+#warn.show{opacity:1}
+#count{white-space:nowrap;position:fixed;left:50%;top:42%;transform:translate(-50%,-50%);font-family:var(--display);font-weight:900;font-size:clamp(90px,18vw,200px);color:var(--sign);text-shadow:0 6px 40px rgba(0,0,0,.5);pointer-events:none}
+
