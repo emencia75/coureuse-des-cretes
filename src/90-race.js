@@ -1,5 +1,5 @@
 /* ================= Course ================= */
-let camGuardT=0,camGround=-1e9;
+let camGuardT=0,camGround=-1e9,snapCam=true;
 let state="menu",raceT=0,countT=0,finishWait=0,lastRank=8,shake=0,menuT=0,lastBeep=4,pausedFrom=null;
 let gustT=8,gustOn=0,gustDir=1;
 // vues sponsors de la course en cours (envoyées à l'arrivée)
@@ -112,7 +112,7 @@ function updateHUD(){
 
 function setScreen(name){["menu","end","pause"].forEach(id=>$(id).hidden=id!==name);}
 function showMenu(){state="menu";setScreen("menu");$("hud").hidden=true;$("touch").hidden=true;$("pauseBtn").hidden=true;document.body.classList.remove("racing");
-  for(const r of runners.slice())if(!r.isPlayer)removeRunner(r);resetRace();runners.forEach(placeRunner);renderBoards();renderSummary();}
+  for(const r of runners.slice())if(!r.isPlayer)removeRunner(r);resetRace();runners.forEach(placeRunner);renderBoards();renderSummary();snapCam=true;}
 function startRace(){initAudio();initRain();if(AC&&AC.state==="suspended")AC.resume();playMusic();musicVol(.4);try{localStorage.setItem("cdc-pseudo",pseudoEl.value.trim());}catch(e){}
   ensureWorld(()=>{setupOpponents();buildDots();resetRace();state="countdown";countT=3.2;setScreen(null);$("hud").hidden=false;$("touch").hidden=!isTouch;$("pauseBtn").hidden=false;document.body.classList.add("racing");$("count").hidden=false;lastBeep=4;
     $("hWhere").textContent=C.name+" · "+WX.label;$("hTrack").querySelector(".rv").style.left="50%";
@@ -137,10 +137,10 @@ $("startBtn").addEventListener("click",startRace);$("againBtn").addEventListener
 $("resumeBtn").addEventListener("click",togglePause);$("quitBtn").addEventListener("click",showMenu);$("pauseBtn").addEventListener("click",()=>{togglePause();$("pauseBtn").blur();});
 
 /* ================= Boucle ================= */
-function resize(){const w=window.innerWidth,h=window.innerHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}
+function resize(){const w=window.innerWidth,h=window.innerHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();resizePost();}
 window.addEventListener("resize",resize);resize();
 let last=performance.now(),T=0;
-function frame(now){requestAnimationFrame(frame);let dt=(now-last)/1000;last=now;if(dt>.05)dt=.05;if(dt<=0||!world)return;T+=dt;
+function frame(now){requestAnimationFrame(frame);let dt=(now-last)/1000;last=now;if(dt>.05)dt=.05;if(dt<=0||!world)return;T+=dt;GFX.dt=dt;GFX.time.value+=dt;
   if(state==="countdown"){countT-=dt;const n=Math.ceil(countT-.2);if(n!==lastBeep&&n>=0){lastBeep=n;if(n>0){$("count").textContent=String(n);sfxBeep(520,.15);}else{$("count").textContent="Partez !";sfxBeep(1040,.35);}}if(countT<=0){state="race";$("count").hidden=true;}}
   const simulate=state==="race"||state==="finished"||state==="ended";
   if(simulate){raceT+=dt;
@@ -160,7 +160,7 @@ function frame(now){requestAnimationFrame(frame);let dt=(now-last)/1000;last=now
     tmpV.set(P.x+(SP.fx*Math.cos(a)+SP.rx*Math.sin(a))*dist,P.y+1.45,P.z+(SP.fz*Math.cos(a)+SP.rz*Math.sin(a))*dist);
     // aperçu du héros décalé hors du panneau
     camRight.set(tmpV.z-P.z,0,-(tmpV.x-P.x)).normalize();const off=narrow?0:-1.15;tmpL.set(P.x+camRight.x*off,P.y+(narrow?-.5:1.0),P.z+camRight.z*off);
-    camera.fov=lerp(camera.fov,45,dt*3);camPos.lerp(tmpV,1-Math.exp(-dt*3));camLook.lerp(tmpL,1-Math.exp(-dt*3));}
+    camera.fov=lerp(camera.fov,45,dt*3);if(snapCam){camPos.copy(tmpV);camLook.copy(tmpL);camera.fov=45;snapCam=false;}camPos.lerp(tmpV,1-Math.exp(-dt*3));camLook.lerp(tmpL,1-Math.exp(-dt*3));}
   else if(state==="ended"||state==="finished"&&finishWait<2.2){const a=T*.25;tmpV.set(P.x+Math.sin(a)*6,P.y+2.4,P.z+Math.cos(a)*6);tmpL.set(P.x,P.y+1.1,P.z);camPos.lerp(tmpV,1-Math.exp(-dt*1.5));camLook.lerp(tmpL,1-Math.exp(-dt*3));camera.fov=lerp(camera.fov,58,dt*2);}
   else{const back=5.6,up=2.3;const cs=player.s-back;samp(cs);const cd=player.d*.7;tmpV.set(SP.x+SP.rx*cd,SP.y+up,SP.z+SP.rz*cd);
     samp(player.s+9);tmpL.set(SP.x+SP.rx*player.d*.5,Math.min(SP.y+1,P.y+.9),SP.z+SP.rz*player.d*.5);
@@ -168,19 +168,21 @@ function frame(now){requestAnimationFrame(frame);let dt=(now-last)/1000;last=now
   camGuardT-=dt;if(camGuardT<=0){camGuardT=.1;camGround=groundY(camPos.x,camPos.z);}if(camPos.y<camGround+(state==="menu"?.9:1.3))camPos.y=camGround+(state==="menu"?.9:1.3);
   camera.position.copy(camPos);if(shake>0){shake=Math.max(0,shake-dt*1.5);camera.position.x+=(Math.random()-.5)*shake*.5;camera.position.y+=(Math.random()-.5)*shake*.5;}
   camera.lookAt(camLook);camera.updateProjectionMatrix();
-  sky.position.copy(camera.position);valley.position.set(camera.position.x,seaFixedY!=null?seaFixedY:PY[idx(player.s)]-190,camera.position.z);
+  sky.position.copy(camera.position);if(GFX.sky)GFX.sky.position.copy(camera.position);if(waterObj&&waterObj.material.uniforms)waterObj.material.uniforms.time.value+=dt*.6;valley.position.set(camera.position.x,seaFixedY!=null?seaFixedY:PY[idx(player.s)]-190,camera.position.z);
   sun.position.set(P.x+SUN_DIR.x*60,P.y+SUN_DIR.y*60,P.z+SUN_DIR.z*60);sun.target.position.copy(P);sunDisc.position.set(camera.position.x+SUN_DIR.x*1500,camera.position.y+SUN_DIR.y*1500,camera.position.z+SUN_DIR.z*1500);
   if(windG)windG.gain.value=(simulate?clamp((player.v-2)/8,0,1)*.22:0)+(gustOn>0?.35:0);
   if(rainG)rainG.gain.value=WX.rain?(WX.storm?.22:.13):0;
   updWeather(dt,camera.position);animFans(T,f=>Math.abs(f.z-P.z)<120);updDust(dt);updSplash(dt);
   if(warnT>0){warnT-=dt;if(warnT<=0)warnEl.classList.remove("show");}if(toastT>0){toastT-=dt;if(toastT<=0)toastEl.classList.remove("show");}
   if(state==="race"||state==="finished"||state==="countdown")updateHUD();
-  renderer.render(scene,camera);
+  renderFrame();
 }
-// démarrage
-setPlayer(heroById(cfg.hero),cfg.custom[cfg.hero]);
-renderHeroGrid();renderHeroDetail();renderCourses();renderWeather();renderSummary();renderBoards();
-ensureWorld(()=>{$("loading").hidden=true;showMenu();});
+// démarrage : ciel, post-traitement, ressources, puis le monde
+setupSky();setupPost();renderQuality();
+loadAssets((n,t)=>{$("loading").textContent="Chargement des modèles · "+n+"/"+t;}).then(()=>{
+  setPlayer(heroById(cfg.hero),cfg.custom[cfg.hero]);
+  renderHeroGrid();renderHeroDetail();renderCourses();renderWeather();renderSummary();renderBoards();
+  ensureWorld(()=>{$("loading").hidden=true;showMenu();});});
 requestAnimationFrame(frame);
 })();
 </script>

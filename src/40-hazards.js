@@ -50,8 +50,8 @@ function foodMesh(key,scale){const g=new THREE.Group();
   g.scale.setScalar(scale||1.8);g.traverse(o=>{if(o.isMesh)o.castShadow=true;});return g;}
 function buildHazards(){
   hazards=[];dyns=[];waterMeshes=[];const R=mulberry32(42+C.id.length*13);const c=C;
-  const rockMat=new THREE.MeshStandardMaterial({color:c.pal.rock,flatShading:true,roughness:.9});const bark=new THREE.MeshStandardMaterial({color:0x5b3f26,flatShading:true,roughness:.95});const ring=new THREE.MeshStandardMaterial({color:0xc89a62,roughness:.9});
-  const mudMat=new THREE.MeshStandardMaterial({color:0x3a2a1a,roughness:.25,metalness:.1});const rootMat=new THREE.MeshStandardMaterial({color:0x4a3320,roughness:.9,flatShading:true});
+  const rockMat=new THREE.MeshStandardMaterial({color:lin(c.pal.rock),map:GFX.tex.rock.map,normalMap:GFX.tex.rock.normal,roughness:.88});const bark=new THREE.MeshStandardMaterial({color:lin(0x6b4a30),map:GFX.tex.rock.map,normalMap:GFX.tex.rock.normal,roughness:.95});const ring=new THREE.MeshStandardMaterial({color:0xc89a62,roughness:.9});
+  const mudMat=new THREE.MeshStandardMaterial({color:0x3a2a1a,roughness:.25,metalness:.1});const rootMat=new THREE.MeshStandardMaterial({color:lin(0x5a3d26),map:GFX.tex.rock.map,normalMap:GFX.tex.rock.normal,roughness:.9});
   const rimMat=new THREE.MeshStandardMaterial({color:0x4a3a26,roughness:.6});
   const screeTex=textTex(256,256,(x,w,h)=>{x.clearRect(0,0,w,h);const r=mulberry32(5);const pc=new THREE.Color(c.pal.rock);for(let i=0;i<700;i++){const k=.75+r()*.35;x.fillStyle="rgb("+(pc.r*255*k|0)+","+(pc.g*255*k|0)+","+(pc.b*255*k|0)+")";const rr=2+r()*6;x.beginPath();x.ellipse(r()*w,r()*h,rr,rr*.7,r()*3,0,7);x.fill();}});
   const screeMat=new THREE.MeshStandardMaterial({map:screeTex,transparent:true,roughness:1,depthWrite:false});
@@ -74,7 +74,7 @@ function buildHazards(){
       s=RAVITO+26;continue;}
     let t=pick();if(t===last&&t!=="rock")t=pick();last=t;
     if(t==="rock"){const two=R()<.35+diff*.3;const g=group(s,.1);const centers=two?[-W*.55+(R()-.5),W*.55+(R()-.5)]:[(R()-.5)*(2*W-1.8)];
-      for(const cc of centers){const rad=.55+R()*.3;const m=new THREE.Mesh(new THREE.DodecahedronGeometry(rad,0),rockMat);m.scale.set(1.15,.85+R()*.25,1);m.rotation.set(R()*3,R()*3,R()*3);m.position.set(cc,rad*.6,0);m.castShadow=true;g.add(m);add({type:"rock",s:s,d0:cc-rad*1.05,d1:cc+rad*1.05,depth:rad*1.6,clear:99,g:g});}}
+      for(const cc of centers){const rad=.55+R()*.3;const m=new THREE.Mesh(rockGeo(Math.floor(R()*4)),rockMat);m.scale.set(rad*1.15,rad*(.85+R()*.25),rad);m.rotation.set(0,R()*6.28,0);m.position.set(cc,rad*.28,0);m.castShadow=true;g.add(m);add({type:"rock",s:s,d0:cc-rad*1.05,d1:cc+rad*1.05,depth:rad*1.6,clear:99,g:g});}}
     else if(t==="log"){const len=3.4+R()*1.6;const fromLeft=R()<.5;const d0=fromLeft?-W-.6:W+.6-len,d1=d0+len;const g=group(s,.1);
       const lg=new THREE.Mesh(new THREE.CylinderGeometry(.22,.26,len,9),bark);lg.rotation.z=Math.PI/2;lg.position.set((d0+d1)/2,.24,0);lg.castShadow=true;g.add(lg);
       const end=new THREE.Mesh(new THREE.CircleGeometry(.22,9),ring);end.position.set(fromLeft?d1+.001:d0-.001,.24,0);end.rotation.y=fromLeft?Math.PI/2:-Math.PI/2;g.add(end);add({type:"log",s:s,d0:d0,d1:d1,depth:.55,clear:.34,g:g});}
@@ -90,7 +90,7 @@ function buildHazards(){
     else if(t==="stand"){const kind=c.fauna.stand;const big=ANIMALS[kind].big;const cc=(R()-.5)*(2*W-(big?2.6:2));const g=flat(s);const A=makeQuad(kind);g.add(A.g);const face=R()<.5?1:-1;if(face<0)A.g.rotation.y=Math.PI;const hl=big?1.05:.7;
       add({type:"stand",kind:kind,dyn:true,s:s,dir:face,start:cc,d:cc,stubborn:big||kind==="pony"||R()<.5,len:hl,depth:big?1.1:.8,clear:99,d0:cc-hl,d1:cc+hl,g:g,A:A});}
     else if(t==="rockfall"){warnSign(s-24,"CHUTES DE PIERRES");const n=2+(diff>.5&&R()<.5?1:0);
-      for(let i=0;i<n;i++){const ss=s+i*(2.5+R()*2.5);const g=flat(ss);const rad=.4+R()*.35;const m=new THREE.Mesh(new THREE.DodecahedronGeometry(rad,0),rockMat);m.castShadow=true;g.add(m);const sp=7+R()*3;
+      for(let i=0;i<n;i++){const ss=s+i*(2.5+R()*2.5);const g=flat(ss);const rad=.4+R()*.35;const m=new THREE.Mesh(rockGeo(i%4),rockMat);m.scale.setScalar(rad);m.castShadow=true;g.add(m);const sp=7+R()*3;
         add({type:"boulder",dyn:true,s:ss,start:-(W+18),d:-(W+18),speed:sp,rad:rad,tArr0:(W+18)/sp+(R()-.45)*1.1+i*.25,len:rad,depth:rad*1.6,clear:99,d0:-99,d1:-99,g:g,m:m,first:i===0});}s+=8;}
     else if(t==="small"){const n=R()<.5?2:1;for(let i=0;i<n;i++){const ss=s+i*3.5;const dir=R()<.5?1:-1;const g=flat(ss);const hole=new THREE.Mesh(new THREE.CircleGeometry(.2,12),holeMat);hole.rotation.x=-Math.PI/2;const hd=-dir*(W+.55);hole.position.set(hd,relGround(ss,hd)+.03,0);g.add(hole);
         const A=makeMarmot();g.add(A.g);if(dir<0)A.g.rotation.y=Math.PI;add({type:"marmot",dyn:true,s:ss,dir:dir,start:hd,d:hd,speed:3.6+R()*1.2,tArr0:.9+R()*.9,len:.28,depth:.5,clear:.3,d0:-99,d1:-99,g:g,A:A});}}

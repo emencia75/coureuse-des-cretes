@@ -16,6 +16,18 @@ Choisis ton héros, ton parcours et ta météo, puis dévale le sentier en 2 min
 
 ---
 
+## 🎨 Rendu
+
+- **Ciel atmosphérique** physique qui éclaire aussi toute la scène (lumière d’ambiance et reflets).
+- **Terrain photo-réaliste** : herbe photographique, roche avec relief sur les pentes, terre aux abords du sentier, neige selon l’altitude et la météo.
+- **Sentier** en terre tassée avec cailloux en relief, **forêts** de sapins en rameaux d’aiguilles, feuillus et pins d’Alep balancés par le vent, **rochers** sculptés.
+- **Coureurs animés par capture de mouvement** (repos, marche, course), habillés aux couleurs de chaque héros ; spectateurs réalistes.
+- **Eau réfléchissante** pour la mer des Calanques et le lac de Champex.
+- **Post-traitement** : halo lumineux, rendu cinéma, étalonnage par météo, vignettage, anti-crénelage.
+- **Trois niveaux de qualité** (Haute, Moyenne, Basse) dans le menu Héros ; Moyenne par défaut sur mobile.
+
+---
+
 ## 🏃 10 héros, 10 caractères
 
 Chaque héros a cinq caractéristiques (vitesse, agilité, saut, endurance, robustesse) qui changent sa façon de courir, et un **talent** qui lui est propre. Le maillot et les chaussures se personnalisent.
@@ -58,11 +70,11 @@ La longueur de chaque parcours est calculée à partir de son profil, pour qu’
 <table>
 <tr>
 <td width="50%"><img src="docs/screenshots/calanques.jpg" alt="Calanques : sentier calcaire blanc, pins d’Alep et mer turquoise"></td>
-<td width="50%"><img src="docs/screenshots/chamonix-pluie.jpg" alt="Chamonix sous la pluie, un rocher au milieu du sentier"></td>
+<td width="50%"><img src="docs/screenshots/chamonix.jpg" alt="Chamonix : peloton sur un sentier de gravier en forêt de sapins"></td>
 </tr>
 <tr>
 <td><b>Calanques</b> · beau temps</td>
-<td><b>Chamonix</b> · pluie</td>
+<td><b>Chamonix</b> · beau temps</td>
 </tr>
 </table>
 
@@ -181,7 +193,8 @@ Le code est découpé en modules dans `src/`, puis assemblé en un seul fichier 
 ```
 src/
 ├── 01a-head.html … 01d-body.html   # page, styles et HUD
-├── 10-core.js       # moteur de rendu, ciel, textures
+├── 10-core.js       # moteur de rendu, utilitaires
+├── 15-gfx.js        # rendu réaliste : ciel, textures, post-traitement, qualité
 ├── 20-data.js       # parcours, météos, héros
 ├── 30-world.js      # tracé, relief, végétation, décor de chaque parcours
 ├── 40-hazards.js    # pièges et faune
@@ -194,6 +207,13 @@ src/
 
 ---
 
-## 📄 Licence
+## 📄 Licence et crédits
 
 Code sous licence [MIT](LICENSE). La musique « Run the Ridge » est fournie par l’auteur du projet.
+
+Ressources tierces (dossier `assets/`) :
+
+- `xbot.json` : personnage « Xbot » et ses animations, issus des exemples de [three.js](https://github.com/mrdoob/three.js/tree/r128/examples/models/gltf) (personnage et animations Mixamo, utilisables dans un jeu mais pas redistribuables seuls). Converti du format `.glb` en glTF JSON.
+- `grass.jpg`, `grass_n.jpg` : texture d’herbe et sa carte de relief, issues des exemples de three.js (`textures/terrain`).
+- `waternormals.jpg` : relief de surface d’eau, issu des exemples de three.js.
+- Modules three.js r128 (licence MIT) chargés depuis jsDelivr : chargeur glTF, ciel, eau, post-traitement.

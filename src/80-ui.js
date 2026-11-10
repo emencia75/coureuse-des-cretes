@@ -114,3 +114,7 @@ async function saveImpressions(counts){
   if(boardMode==="shared"&&db&&uid){try{const ref=db.doc("impressions/"+uid);const snap=await ref.get();const old=snap.exists?snap.data():null;
     const doc=old&&old.v===1&&old.counts&&typeof old.counts==="object"?{v:1,races:(old.races|0)+1,counts:Object.assign({},old.counts)}:{v:1,races:1,counts:{}};
     for(const k in counts)if(sponsorById(k))doc.counts[k]=((typeof doc.counts[k]==="number"?doc.counts[k]:0)+counts[k]);doc.at=Date.now();await ref.set(doc);}catch(e){}}}
+
+// qualité graphique : reconstruit le décor et le post-traitement
+function renderQuality(){const box=$("qualityChips");box.textContent="";Object.keys(QUALITY).forEach(k=>{const b=el("button","chip",QUALITY[k].label);b.type="button";b.setAttribute("aria-pressed",GFX.q===k);
+  b.addEventListener("click",()=>{if(GFX.q===k)return;GFX.q=k;try{localStorage.setItem("cdc-quality",k);}catch(e){}renderQuality();setupPost();if(GFX.sky)applyWeather(resolvedWeather());builtCourse=null;ensureWorld();});box.appendChild(b);});}
