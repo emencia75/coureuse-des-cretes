@@ -79,7 +79,17 @@ function resizePost(){if(!GFX.composer)return;const w=window.innerWidth,h=window
 function loadTex(url,srgb){return new Promise(res=>{new THREE.TextureLoader().load(url,t=>{t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=MAXANISO;if(srgb)t.encoding=THREE.sRGBEncoding;res(t);},undefined,()=>res(null));});}
 function loadAssets(onStep){const jobs=[];
   if(THREE.GLTFLoader)jobs.push(new Promise(res=>new THREE.GLTFLoader().load("assets/xbot.json",g=>{GFX.xbot=g;res();},undefined,()=>res())));
+  GFX.tex.photo={};
+  for(const n of["auvergne","calcaire"])jobs.push(Promise.all([loadTex("assets/sol-"+n+".jpg",true),loadTex("assets/sol-"+n+"_n.jpg",false)]).then(r=>{if(r[0]&&r[1])GFX.tex.photo["sol-"+n]={map:r[0],normal:r[1]};}));
+  jobs.push(Promise.all([loadTex("assets/roche-granite.jpg",true),loadTex("assets/roche-granite_n.jpg",false)]).then(r=>{if(r[0]&&r[1])GFX.tex.photo["roche-granite"]={map:r[0],normal:r[1]};}));
+  jobs.push(loadTex("assets/pano-montblanc.webp",true).then(t=>{if(t){t.wrapS=THREE.MirroredRepeatWrapping;t.wrapT=THREE.ClampToEdgeWrapping;GFX.tex.pano={montblanc:t};}}));
+  jobs.push(loadTex("assets/sapin.webp",true).then(t=>{if(t){t.wrapS=t.wrapT=THREE.ClampToEdgeWrapping;GFX.tex.spruce=t;}}));
   jobs.push(loadTex("assets/grass.jpg",true).then(t=>GFX.tex.grass=t));jobs.push(loadTex("assets/grass_n.jpg",false).then(t=>GFX.tex.grassN=t));jobs.push(loadTex("assets/waternormals.jpg",false).then(t=>GFX.tex.water=t));
   let n=0;jobs.forEach(j=>j.then(()=>onStep&&onStep(++n,jobs.length)));
   return Promise.all(jobs).then(()=>{const L=document.getElementById("loading");if(L)L.textContent="Préparation des textures…";
     return new Promise(r=>setTimeout(()=>{GFX.tex.rock=makeRock();GFX.tex.needles=makeNeedles();GFX.tex.leaves=makeLeaves();GFX.tex.cloud=makeCloud();r();},20));});}
+
+// textures du parcours : photo si disponible, sinon procédurale
+function soilOf(c){const p=PHOTO[c.id];return(p&&p.soil&&GFX.tex.photo&&GFX.tex.photo["sol-"+p.soil])||null;}
+function rockOf(c){const p=PHOTO[c.id]||{};const ph=GFX.tex.photo||{};if(p.rock==="calcaire"&&ph["sol-calcaire"])return{set:ph["sol-calcaire"],photo:true,tint:1};
+  if(ph["roche-granite"])return{set:ph["roche-granite"],photo:true,tint:p.rockTint||1};return{set:GFX.tex.rock,photo:false,tint:1};}

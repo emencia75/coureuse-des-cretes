@@ -216,4 +216,5 @@ Ressources tierces (dossier `assets/`) :
 - `xbot.json` : personnage « Xbot » et ses animations, issus des exemples de [three.js](https://github.com/mrdoob/three.js/tree/r128/examples/models/gltf) (personnage et animations Mixamo, utilisables dans un jeu mais pas redistribuables seuls). Converti du format `.glb` en glTF JSON.
 - `grass.jpg`, `grass_n.jpg` : texture d’herbe et sa carte de relief, issues des exemples de three.js (`textures/terrain`).
 - `waternormals.jpg` : relief de surface d’eau, issu des exemples de three.js.
+- `sol-auvergne`, `sol-calcaire`, `roche-granite` (avec leurs cartes de relief `_n`), `pano-montblanc.webp`, `sapin.webp` : images Midjourney fournies par l’auteur du projet, rendues répétables, détourées et voilées pour le jeu.
 - Modules three.js r128 (licence MIT) chargés depuis jsDelivr : chargeur glTF, ciel, eau, post-traitement.

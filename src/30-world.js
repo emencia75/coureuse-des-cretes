@@ -34,7 +34,7 @@ function terrainAt(x,z){const s=nearestS(x,z);const i=idx(s);const d=(x-PX[i])*R
   return{y:base+h,d:d,s:s,ad:ad,rel:h};}
 function groundY(x,z){return terrainAt(x,z).y;}
 
-let adSpots=[],trailDirt=null,waterObj=null;let world=null,terrainMesh=null,terrainBase=null,terrainSnowAmt=null,trailMesh=null,trailMaps=null,grassMesh=null,treeMeshes=[],cloudMat=null,clouds=[],fans=null,valley=null,seaFixedY=null,decorWater=null;
+let adSpots=[],trailDirt=null,waterObj=null,panoObj=null;let world=null,terrainMesh=null,terrainBase=null,terrainSnowAmt=null,trailMesh=null,trailMaps=null,grassMesh=null,treeMeshes=[],cloudMat=null,clouds=[],fans=null,valley=null,seaFixedY=null,decorWater=null;
 function dirtTex(base,pebble,snow){return canvasTex(512,(x,n)=>{x.fillStyle=snow?"#e9edf1":base;x.fillRect(0,0,n,n);const R=mulberry32(7);
   if(snow){for(let i=0;i<2600;i++){x.fillStyle="rgba(180,195,210,"+(.15+R()*.3)+")";x.beginPath();x.arc(R()*n,R()*n,R()*3+.5,0,7);x.fill();}
     x.strokeStyle="rgba(110,90,70,.45)";x.lineWidth=9;for(let i=0;i<4;i++){x.beginPath();const px=120+R()*270;x.moveTo(px,0);for(let y=0;y<=n;y+=16)x.lineTo(px+Math.sin(y*.025+i)*9,y);x.stroke();}return;}
@@ -74,11 +74,15 @@ function treeCards(type){const P=[],U=[],Nn=[],I=[];const quad=(a,b,c2,d,n)=>{co
     for(let k=0;k<28;k++){const a=R()*6.28,el=(R()-.35)*1.6,r=.6+R()*1.2;const cx=Math.cos(a)*Math.cos(el)*r*1.25,cy=H+1.1+Math.sin(el)*r,cz=Math.sin(a)*Math.cos(el)*r*1.25;const s=.75+R()*.5;const n=V(cx,cy-H-1.1,cz).normalize();
       const ta=R()*3.14;const ux=Math.cos(ta)*s,uz=Math.sin(ta)*s;quad(V(cx-ux,cy-s,cz-uz),V(cx+ux,cy-s,cz+uz),V(cx+ux,cy+s,cz+uz),V(cx-ux,cy+s,cz-uz),n);}}
   const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.Float32BufferAttribute(P,3));g.setAttribute("uv",new THREE.Float32BufferAttribute(U,2));g.setAttribute("normal",new THREE.Float32BufferAttribute(Nn,3));g.setIndex(I);return{foliage:g,trunk:trunk};}
+// sapin photo : trois panneaux croisés (l'image détourée contient le tronc)
+function spruceCards(){const P=[],U=[],Nn=[],I=[];const H=9,Wd=4.6;for(let k=0;k<3;k++){const a=k*Math.PI/3;const dx=Math.cos(a)*Wd/2,dz=Math.sin(a)*Wd/2;const o=P.length/3;
+    P.push(-dx,0,-dz,dx,0,dz,dx,H,dz,-dx,H,-dz);U.push(0,0,1,0,1,1,0,1);for(let i=0;i<4;i++)Nn.push(0,1,0);I.push(o,o+1,o+2,o,o+2,o+3);}
+  const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.Float32BufferAttribute(P,3));g.setAttribute("uv",new THREE.Float32BufferAttribute(U,2));g.setAttribute("normal",new THREE.Float32BufferAttribute(Nn,3));g.setIndex(I);return{foliage:g,trunk:new THREE.BufferGeometry()};}
 // rocher irrégulier : icosaèdre déformé par du bruit
 function rockGeo(v){const g=new THREE.IcosahedronGeometry(1,3);const p=g.attributes.position;const tmp=new THREE.Vector3();for(let i=0;i<p.count;i++){tmp.fromBufferAttribute(p,i);const n=fbm(tmp.x*1.6+v*7,tmp.z*1.6+tmp.y*1.3+v*3);const k=1+n*.38+Math.max(0,tmp.y)*-.15;tmp.multiplyScalar(k);if(tmp.y<-.3)tmp.y=-.3+(tmp.y+.3)*.3;p.setXYZ(i,tmp.x,tmp.y,tmp.z);}g.computeVertexNormals();return g;}
 function makeTerrainMat(c){
   const nrm=GFX.tex.grassN||GFX.tex.rock.normal;const m=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.95,metalness:0,normalMap:nrm});m.normalScale.set(.9,.9);
-  const U={tGrass:{value:GFX.tex.grass||grassDetail},tRock:{value:GFX.tex.rock.map},tRockN:{value:GFX.tex.rock.normal},tDirt:{value:trailDirt.map},tDirtN:{value:trailDirt.normal},uRock:{value:lin(c.pal.rock)},uSnow:{value:0},uWet:{value:0},uPhoto:{value:GFX.tex.grass?1:0}};
+  const RK=rockOf(c);const U={tGrass:{value:GFX.tex.grass||grassDetail},tRock:{value:RK.set.map},tRockN:{value:RK.set.normal},tDirt:{value:trailDirt.map},tDirtN:{value:trailDirt.normal},uRock:{value:RK.photo?new THREE.Color(.6,.6,.6).multiplyScalar(RK.tint):lin(c.pal.rock)},uSnow:{value:0},uWet:{value:0},uPhoto:{value:GFX.tex.grass?1:0}};
   m.onBeforeCompile=sh=>{Object.assign(sh.uniforms,U);
     sh.vertexShader=sh.vertexShader.replace("#include <common>","#include <common>\nattribute vec3 aSplat;varying vec3 vSplat;varying vec3 vWPos;varying vec3 vWN;")
       .replace("#include <begin_vertex>","#include <begin_vertex>\nvSplat=aSplat;vWPos=(modelMatrix*vec4(position,1.)).xyz;vWN=normalize(mat3(modelMatrix)*normal);");
@@ -120,7 +124,7 @@ function buildWorld(c){
       spl[n*3+2]=ad<3.2?1-Math.max(0,ad)/3.2:0;}
     const index=new Uint32Array((rows-1)*(cols-1)*6);let q=0;for(let r=0;r<rows-1;r++)for(let k=0;k<cols-1;k++){const a=r*cols+k,b=a+1,d=a+cols,e=d+1;index[q++]=a;index[q++]=b;index[q++]=d;index[q++]=b;index[q++]=e;index[q++]=d;}
     const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.BufferAttribute(pos,3));g.setAttribute("color",new THREE.BufferAttribute(col,3));g.setAttribute("uv",new THREE.BufferAttribute(uv,2));g.setAttribute("aSplat",new THREE.BufferAttribute(spl,3));g.setIndex(new THREE.BufferAttribute(index,1));g.computeVertexNormals();
-    trailDirt=makeDirt(c.dirt,c.pebble);terrainMesh=new THREE.Mesh(g,makeTerrainMat(c));terrainMesh.receiveShadow=true;world.add(terrainMesh);}
+    trailDirt=soilOf(c)||makeDirt(c.dirt,c.pebble);terrainMesh=new THREE.Mesh(g,makeTerrainMat(c));terrainMesh.receiveShadow=true;world.add(terrainMesh);}
   // --- fond de vallée, mer ou lac (eau réfléchissante si la qualité le permet)
   const isSea=c.water&&c.water.kind==="sea";seaFixedY=isSea?PY[idx(L)]-20:null;waterObj=null;
   function waterMesh(geo,color){if(QS().water&&THREE.Water&&GFX.tex.water){const w=new THREE.Water(geo,{textureWidth:512,textureHeight:512,waterNormals:GFX.tex.water,sunDirection:SUN_DIR.clone(),sunColor:0xffffff,waterColor:color,distortionScale:2.2,fog:true});w.rotation.x=-Math.PI/2;waterObj=w;return w;}
@@ -135,7 +139,7 @@ function buildWorld(c){
     for(let s=S0+2;s<=S1-2;s+=.75){samp(s);for(let k=0;k<D.length;k++){pos.push(SP.x+SP.rx*D[k],SP.y+Y[k],SP.z+SP.rz*D[k]);uv.push((D[k]+W+1.2)/(2*W+2.4)*3.4,s/2.2);cc.copy(k===0||k===D.length-1?edge:mid);cc.multiplyScalar(.9+fbm(s*.08,k*1.3)*.15);col.push(cc.r,cc.g,cc.b);}rows++;}
     const n=D.length;for(let r=0;r<rows-1;r++)for(let k=0;k<n-1;k++){const a=r*n+k,b=a+1,cc2=a+n,d=cc2+1;index.push(a,b,cc2,b,d,cc2);}
     const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.Float32BufferAttribute(pos,3));g.setAttribute("uv",new THREE.Float32BufferAttribute(uv,2));g.setAttribute("color",new THREE.Float32BufferAttribute(col,3));g.setIndex(index);g.computeVertexNormals();
-    trailMesh=new THREE.Mesh(g,new THREE.MeshStandardMaterial({map:trailMaps.dry,normalMap:trailMaps.dryN,vertexColors:true,roughness:.93}));trailMesh.material.normalScale.set(1.2,1.2);trailMesh.receiveShadow=true;world.add(trailMesh);}
+    trailMesh=new THREE.Mesh(g,new THREE.MeshStandardMaterial({map:trailMaps.dry,normalMap:trailMaps.dryN,vertexColors:true,roughness:.93}));trailMesh.material.normalScale.set(1.2,1.2);trailMesh.userData.tint=(PHOTO[c.id]&&PHOTO[c.id].soil==='calcaire')?.74:1;trailMesh.material.color.setScalar(trailMesh.userData.tint);trailMesh.receiveShadow=true;world.add(trailMesh);}
   // --- herbes : touffes fines qui ondulent au vent
   {const tex=canvasTex(256,(x,n)=>{x.clearRect(0,0,n,n);const R=mulberry32(3);for(let i=0;i<110;i++){const bx=n*.5+(R()-.5)*n*.85,h=n*(.35+R()*.6),bend=(R()-.5)*70;const g=120+R()*110|0;
       x.strokeStyle="rgb("+(g*.62|0)+","+g+","+(g*.3|0)+")";x.lineWidth=1.2+R()*2.2;x.beginPath();x.moveTo(bx,n);x.quadraticCurveTo(bx+bend*.25,n-h*.55,bx+bend,n-h);x.stroke();}
@@ -151,20 +155,25 @@ function buildWorld(c){
     grassMesh=mesh;world.add(mesh);}
   // --- arbres : rameaux d'aiguilles ou feuillage sur cartes, balancés par le vent
   {const types=c.trees.type==="mixed"?["fir","broad"]:[c.trees.type];const per=Math.round(c.trees.count*QS().trees/types.length);
-    for(const ty of types){const T=treeCards(ty);const fol=new THREE.MeshStandardMaterial({map:ty==="fir"?GFX.tex.needles:GFX.tex.leaves,alphaTest:.4,side:THREE.DoubleSide,roughness:.9,color:lin(ty==="pine"?0x8a9468:ty==="broad"?0xa4b08a:0xffffff)});windShader(fol,.004,1.5,ty==="fir");
+    for(const ty of types){const photo=ty==="fir"&&!!GFX.tex.spruce;const T=photo?spruceCards():treeCards(ty);const fol=new THREE.MeshStandardMaterial({map:photo?GFX.tex.spruce:ty==="fir"?GFX.tex.needles:GFX.tex.leaves,alphaTest:.4,side:THREE.DoubleSide,roughness:.9,color:lin(ty==="pine"?0x8a9468:ty==="broad"?0xa4b08a:0xffffff)});windShader(fol,.004,1.5,ty==="fir"&&!photo);
       const bark=new THREE.MeshStandardMaterial({color:lin(0x5a4330),roughness:.95,map:GFX.tex.rock.map,normalMap:GFX.tex.rock.normal});
       const mF=new THREE.InstancedMesh(T.foliage,fol,per),mT=new THREE.InstancedMesh(T.trunk,bark,per);const m=new THREE.Matrix4(),q=new THREE.Quaternion(),sc=new THREE.Vector3(),p=new THREE.Vector3(),cc=new THREE.Color(),e=new THREE.Euler();let n=0,tries=0;const base=[];
       while(n<per&&tries<per*20){tries++;const s=R0()*(L+260)-60;samp(s);const side=R0()<.62?1:-1;const d=side*(W+3.4+Math.pow(R0(),1.5)*150);const x=SP.x+SP.rx*d,z=SP.z+SP.rz*d;if(fbm(x*.03,z*.03)<-.1)continue;const t=terrainAt(x,z);if(t.ad<2.8||t.rel>c.trees.maxRel)continue;
-        const k=.75+R0()*.85;sc.set(k,k*(.85+R0()*.4),k);e.set((R0()-.5)*.05,R0()*6.28,(R0()-.5)*.05);q.setFromEuler(e);p.set(x,t.y-.2,z);m.compose(p,q,sc);mF.setMatrixAt(n,m);mT.setMatrixAt(n,m);if(ty==="fir")cc.setHSL(.28+R0()*.05,.25+R0()*.15,.5+R0()*.25);else cc.setHSL(.24+R0()*.08,.3+R0()*.2,.55+R0()*.3);mF.setColorAt(n,cc);base.push(cc.r,cc.g,cc.b);n++;}
-      mF.count=mT.count=n;mF.receiveShadow=mT.receiveShadow=true;mF.userData.base=base;world.add(mF);world.add(mT);treeMeshes.push(mF);}}
+        const k=.75+R0()*.85;sc.set(k,k*(.85+R0()*.4),k);e.set((R0()-.5)*.05,R0()*6.28,(R0()-.5)*.05);q.setFromEuler(e);p.set(x,t.y-.2,z);m.compose(p,q,sc);mF.setMatrixAt(n,m);mT.setMatrixAt(n,m);if(photo)cc.setHSL(.25,.12+R0()*.1,.62+R0()*.3);else if(ty==="fir")cc.setHSL(.28+R0()*.05,.25+R0()*.15,.5+R0()*.25);else cc.setHSL(.24+R0()*.08,.3+R0()*.2,.55+R0()*.3);mF.setColorAt(n,cc);base.push(cc.r,cc.g,cc.b);n++;}
+      mF.count=mT.count=n;mF.receiveShadow=mT.receiveShadow=true;mF.userData.base=base;world.add(mF);if(!photo)world.add(mT);treeMeshes.push(mF);}}
   // --- rochers sculptés (relief irrégulier, texture de roche)
-  {const variants=[0,1,2,3].map(v=>rockGeo(v));const mat=new THREE.MeshStandardMaterial({color:lin(c.pal.rock),map:GFX.tex.rock.map,normalMap:GFX.tex.rock.normal,roughness:.9});const COUNT=Math.round(700*(1+Math.max(0,c.rockBias)*1.5));const per=Math.ceil(COUNT/4);
+  {const variants=[0,1,2,3].map(v=>rockGeo(v));const RK=rockOf(c);const mat=new THREE.MeshStandardMaterial({color:RK.photo?new THREE.Color(1,1,1).multiplyScalar(RK.tint):lin(c.pal.rock),map:RK.set.map,normalMap:RK.set.normal,roughness:.9});const COUNT=Math.round(700*(1+Math.max(0,c.rockBias)*1.5));const per=Math.ceil(COUNT/4);
     variants.forEach(geo=>{const mesh=new THREE.InstancedMesh(geo,mat,per);const m=new THREE.Matrix4(),q=new THREE.Quaternion(),sc=new THREE.Vector3(),p=new THREE.Vector3(),e=new THREE.Euler(),cc=new THREE.Color();
       for(let i=0;i<per;i++){const s=R0()*(L+240)-60;samp(s);const side=R0()<.5?1:-1;const near=R0()<.45;const d=side*(near?W+1.4+R0()*3:W+4+R0()*120);const x=SP.x+SP.rx*d,z=SP.z+SP.rz*d;const t=terrainAt(x,z);const k=near?.25+R0()*.5:.5+R0()*2.6;
         sc.set(k*(1+R0()*.5),k*(.55+R0()*.4),k*(1+R0()*.5));e.set((R0()-.5)*.4,R0()*6.28,(R0()-.5)*.4);q.setFromEuler(e);p.set(x,t.y+k*.1,z);m.compose(p,q,sc);mesh.setMatrixAt(i,m);cc.setScalar(.8+R0()*.35);mesh.setColorAt(i,cc);}
       mesh.receiveShadow=true;mesh.castShadow=false;world.add(mesh);});}
 
-  // --- massifs lointains
+  // --- toile de fond photo (panorama détouré sur un cylindre qui suit la caméra)
+  panoObj=null;const PH=PHOTO[c.id]||{};const pt=PH.pano&&GFX.tex.pano&&GFX.tex.pano[PH.pano];
+  if(pt){const Rr=1700,rep=4,Hh=2*Math.PI*Rr/rep/3;const t=pt.clone();t.needsUpdate=true;t.repeat.set(rep,1);
+    const g=new THREE.CylinderGeometry(Rr,Rr,Hh,96,1,true);g.translate(0,Hh/2-90,0);
+    panoObj=new THREE.Mesh(g,new THREE.MeshBasicMaterial({map:t,side:THREE.BackSide,transparent:true,fog:false,depthWrite:false,alphaTest:.02}));panoObj.renderOrder=-1;panoObj.rotation.y=Math.PI*.25;world.add(panoObj);}
+  if(!pt)  // --- massifs lointains
   {const pk=c.peaks;const g=pk.round?new THREE.SphereGeometry(1,40,16,0,Math.PI*2,0,Math.PI/2):new THREE.ConeGeometry(1,1,40,16);if(!pk.round)g.translate(0,.5,0);const p=g.attributes.position;const col=[];const rock=new THREE.Color(pk.col),snow=new THREE.Color(0xf4f6f9),haze=new THREE.Color(0x9fb4c8),cc=new THREE.Color();
     for(let i=0;i<p.count;i++){const y=p.getY(i);const a=Math.atan2(p.getZ(i),p.getX(i));let n=0;if(y<.97&&y>.01){n=fbm(Math.cos(a)*2.2+y*3,Math.sin(a)*2.2+y*2.5);const r=1+n*(pk.round?.18:.55);p.setX(i,p.getX(i)*r);p.setZ(i,p.getZ(i)*r);p.setY(i,y+n*.06);}
       cc.copy(rock).multiplyScalar(.8+n*.5);if(pk.snow&&y>1-pk.snow+n*.18)cc.copy(snow);if(pk.crater&&y>.92)cc.multiplyScalar(.6);cc.lerp(haze,.3);cc.convertSRGBToLinear();col.push(cc.r,cc.g,cc.b);}

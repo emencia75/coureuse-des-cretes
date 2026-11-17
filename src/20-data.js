@@ -118,3 +118,7 @@ const FOODS={
   saucisson:{label:"Saucisson",brand:null,msg:"+25 d’énergie, bien calé : chutes plus courtes",stam:25,boost:{kind:"cale",t:30,label:"Bien calé"}},
   iso:{label:"Boisson isotonique",brand:null,msg:"+55 d’énergie",stam:55},
 };
+
+// images photo (Midjourney) par parcours : sol du sentier, roche, toile de fond
+const PHOTO={auvergne:{soil:"auvergne",rockTint:.42},calanques:{soil:"calcaire",rock:"calcaire"},ventoux:{soil:"calcaire",rock:"calcaire"},
+  chamonix:{pano:"montblanc"},champex:{pano:"montblanc"},verbier:{pano:"montblanc"}};

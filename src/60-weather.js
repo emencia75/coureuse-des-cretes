@@ -25,12 +25,13 @@ function applyWeather(id){WXID=id;WX=WEATHERS[id];const K=SKYP[id];
   if(cloudMat){cloudMat.color.set(WX.clouds);cloudMat.opacity=id==="beau"?.75:.95;}
   const snowy=id==="neige",wet=id==="pluie"||id==="orage";
   if(terrainMesh&&terrainMesh.material.userData.U){const U=terrainMesh.material.userData.U;U.uSnow.value=snowy?1:0;U.uWet.value=wet?1:0;terrainMesh.material.envMapIntensity=wet?.35:1;}
-  if(trailMesh){const m=trailMesh.material;m.map=snowy?trailMaps.snow:trailMaps.dry;m.roughness=wet?.6:.93;m.color.setScalar(wet?.7:1);m.envMapIntensity=wet?.3:1;m.needsUpdate=true;}
+  if(trailMesh){const m=trailMesh.material;m.map=snowy?trailMaps.snow:trailMaps.dry;m.roughness=wet?.6:.93;m.color.setScalar((trailMesh.userData.tint||1)*(wet?.7:1));m.envMapIntensity=wet?.3:1;m.needsUpdate=true;}
   if(grassMesh)grassMesh.visible=!snowy;
   for(const tm of treeMeshes){const b=tm.userData.base,cc=new THREE.Color();for(let i=0;i<tm.count;i++){cc.setRGB(b[i*3],b[i*3+1],b[i*3+2]);if(snowy)cc.lerp(new THREE.Color(1.6,1.65,1.7),.45);tm.setColorAt(i,cc);}if(tm.instanceColor)tm.instanceColor.needsUpdate=true;}
   for(const wm of waterMeshes){wm.material.color.set(snowy?0xdfeef7:0x6d8ea6);wm.material.roughness=snowy?.12:.03;wm.material.metalness=snowy?.2:.65;}
   if(waterObj&&waterObj.material.uniforms){waterObj.material.uniforms.sunDirection.value.copy(SUN_DIR);waterObj.material.uniforms.sunColor.value.set(id==="beau"?0xffffff:0x777777);}
   if(valley&&seaFixedY==null)valley.material.color.copy(lin(snowy?0xdfe5ea:C.pal.forest));
+  if(panoObj)panoObj.material.opacity={beau:1,pluie:.4,neige:.45,orage:.22}[id];
   nextStrike=3+Math.random()*4;
 }
 function updWeather(dt,cam){

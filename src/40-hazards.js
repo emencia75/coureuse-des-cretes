@@ -50,7 +50,7 @@ function foodMesh(key,scale){const g=new THREE.Group();
   g.scale.setScalar(scale||1.8);g.traverse(o=>{if(o.isMesh)o.castShadow=true;});return g;}
 function buildHazards(){
   hazards=[];dyns=[];waterMeshes=[];const R=mulberry32(42+C.id.length*13);const c=C;
-  const rockMat=new THREE.MeshStandardMaterial({color:lin(c.pal.rock),map:GFX.tex.rock.map,normalMap:GFX.tex.rock.normal,roughness:.88});const bark=new THREE.MeshStandardMaterial({color:lin(0x6b4a30),map:GFX.tex.rock.map,normalMap:GFX.tex.rock.normal,roughness:.95});const ring=new THREE.MeshStandardMaterial({color:0xc89a62,roughness:.9});
+  const RKh=rockOf(c);const rockMat=new THREE.MeshStandardMaterial({color:RKh.photo?new THREE.Color(1,1,1).multiplyScalar(RKh.tint):lin(c.pal.rock),map:RKh.set.map,normalMap:RKh.set.normal,roughness:.88});const bark=new THREE.MeshStandardMaterial({color:lin(0x6b4a30),map:GFX.tex.rock.map,normalMap:GFX.tex.rock.normal,roughness:.95});const ring=new THREE.MeshStandardMaterial({color:0xc89a62,roughness:.9});
   const mudMat=new THREE.MeshStandardMaterial({color:0x3a2a1a,roughness:.25,metalness:.1});const rootMat=new THREE.MeshStandardMaterial({color:lin(0x5a3d26),map:GFX.tex.rock.map,normalMap:GFX.tex.rock.normal,roughness:.9});
   const rimMat=new THREE.MeshStandardMaterial({color:0x4a3a26,roughness:.6});
   const screeTex=textTex(256,256,(x,w,h)=>{x.clearRect(0,0,w,h);const r=mulberry32(5);const pc=new THREE.Color(c.pal.rock);for(let i=0;i<700;i++){const k=.75+r()*.35;x.fillStyle="rgb("+(pc.r*255*k|0)+","+(pc.g*255*k|0)+","+(pc.b*255*k|0)+")";const rr=2+r()*6;x.beginPath();x.ellipse(r()*w,r()*h,rr,rr*.7,r()*3,0,7);x.fill();}});

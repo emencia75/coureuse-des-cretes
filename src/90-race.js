@@ -168,7 +168,7 @@ function frame(now){requestAnimationFrame(frame);let dt=(now-last)/1000;last=now
   camGuardT-=dt;if(camGuardT<=0){camGuardT=.1;camGround=groundY(camPos.x,camPos.z);}if(camPos.y<camGround+(state==="menu"?.9:1.3))camPos.y=camGround+(state==="menu"?.9:1.3);
   camera.position.copy(camPos);if(shake>0){shake=Math.max(0,shake-dt*1.5);camera.position.x+=(Math.random()-.5)*shake*.5;camera.position.y+=(Math.random()-.5)*shake*.5;}
   camera.lookAt(camLook);camera.updateProjectionMatrix();
-  sky.position.copy(camera.position);if(GFX.sky)GFX.sky.position.copy(camera.position);if(waterObj&&waterObj.material.uniforms)waterObj.material.uniforms.time.value+=dt*.6;valley.position.set(camera.position.x,seaFixedY!=null?seaFixedY:PY[idx(player.s)]-190,camera.position.z);
+  sky.position.copy(camera.position);if(GFX.sky)GFX.sky.position.copy(camera.position);if(panoObj)panoObj.position.copy(camera.position);if(waterObj&&waterObj.material.uniforms)waterObj.material.uniforms.time.value+=dt*.6;valley.position.set(camera.position.x,seaFixedY!=null?seaFixedY:PY[idx(player.s)]-190,camera.position.z);
   sun.position.set(P.x+SUN_DIR.x*60,P.y+SUN_DIR.y*60,P.z+SUN_DIR.z*60);sun.target.position.copy(P);sunDisc.position.set(camera.position.x+SUN_DIR.x*1500,camera.position.y+SUN_DIR.y*1500,camera.position.z+SUN_DIR.z*1500);
   if(windG)windG.gain.value=(simulate?clamp((player.v-2)/8,0,1)*.22:0)+(gustOn>0?.35:0);
   if(rainG)rainG.gain.value=WX.rain?(WX.storm?.22:.13):0;
