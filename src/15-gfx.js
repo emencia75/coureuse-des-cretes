@@ -78,11 +78,11 @@ function renderFrame(){if(GFX.composer){try{GFX.composer.render();return;}catch(
 function resizePost(){if(!GFX.composer)return;const w=window.innerWidth,h=window.innerHeight,pr=renderer.getPixelRatio();GFX.composer.setSize(w,h);if(GFX.fxaa)GFX.fxaa.uniforms.resolution.value.set(1/(w*pr),1/(h*pr));}
 
 // --- ressources (modèle animé, photos d'herbe, eau) : facultatives, le jeu marche sans
-function loadTex(url,srgb){return new Promise(res=>{new THREE.TextureLoader().load(url,t=>{t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=MAXANISO;if(srgb)t.encoding=THREE.sRGBEncoding;res(t);},undefined,()=>res(null));});}
+function loadTex(url,srgb){return new Promise(res=>{new THREE.TextureLoader().load(url,t=>{if(DIAG)DIAG.log("OK",url);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=MAXANISO;if(srgb)t.encoding=THREE.sRGBEncoding;res(t);},undefined,()=>{if(DIAG)DIAG.log("ÉCHEC",url);res(null);});});}
 // chaque ressource a 15 s pour arriver ; sinon le jeu continue sans elle
 const inTime=(p,ms)=>Promise.race([p,new Promise(r=>setTimeout(r,ms||15000))]);
 function loadAssets(onStep){const jobs=[];
-  if(THREE.GLTFLoader)jobs.push(new Promise(res=>new THREE.GLTFLoader().load("assets/xbot.json",g=>{GFX.xbot=g;res();},undefined,()=>res())));
+  if(THREE.GLTFLoader)jobs.push(new Promise(res=>new THREE.GLTFLoader().load("assets/xbot.json",g=>{GFX.xbot=g;if(DIAG)DIAG.log("OK","personnage 3D");res();},undefined,e=>{if(DIAG)DIAG.log("ÉCHEC","personnage 3D "+(e&&e.message||""));res();})));
   GFX.tex.photo={};
   for(const n of["auvergne","calcaire"])jobs.push(Promise.all([loadTex("assets/sol-"+n+".jpg",true),loadTex("assets/sol-"+n+"_n.jpg",false)]).then(r=>{if(r[0]&&r[1])GFX.tex.photo["sol-"+n]={map:r[0],normal:r[1]};}));
   jobs.push(Promise.all([loadTex("assets/roche-granite.jpg",true),loadTex("assets/roche-granite_n.jpg",false)]).then(r=>{if(r[0]&&r[1])GFX.tex.photo["roche-granite"]={map:r[0],normal:r[1]};}));

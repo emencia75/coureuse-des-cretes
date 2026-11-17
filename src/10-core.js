@@ -1,4 +1,10 @@
 const $=id=>document.getElementById(id);
+// mode diagnostic (lien terminé par #debug) : journal à l'écran, sans console
+const DIAG=(function(){if(location.hash!=="#debug")return null;const box=document.createElement("div");box.style.cssText="position:fixed;left:8px;right:8px;bottom:8px;max-height:45%;overflow:auto;z-index:99;background:rgba(0,0,0,.85);color:#9f9;font:12px/1.4 monospace;padding:8px;border-radius:4px;white-space:pre-wrap;-webkit-user-select:text;user-select:text";
+  const t0=performance.now();const log=(k,m)=>{box.textContent+=((performance.now()-t0)/1000).toFixed(1)+"s "+k+" "+m+"\n";box.scrollTop=1e9;};
+  const ow=console.warn,oe=console.error;console.warn=function(){log("AVERT",[].map.call(arguments,String).join(" "));ow.apply(console,arguments);};console.error=function(){log("ERREUR",[].map.call(arguments,String).join(" "));oe.apply(console,arguments);};
+  window.addEventListener("error",e=>log("ERREUR",(e.message||"")+" @"+(e.filename||"").split("/").pop()+":"+e.lineno));window.addEventListener("unhandledrejection",e=>log("ERREUR",String(e.reason&&e.reason.message||e.reason)));
+  const add=()=>document.body.appendChild(box);document.body?add():document.addEventListener("DOMContentLoaded",add);log("INFO",navigator.userAgent);return{log:log};})();
 const clamp=(v,a,b)=>v<a?a:v>b?b:v;
 const lerp=(a,b,t)=>a+(b-a)*t;
 function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
@@ -20,6 +26,7 @@ renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 renderer.outputEncoding=THREE.sRGBEncoding;
 renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=.95;
 const MAXANISO=renderer.capabilities.getMaxAnisotropy();
+if(DIAG){try{const gl=renderer.getContext();const ext=gl.getExtension("WEBGL_debug_renderer_info");DIAG.log("INFO","WebGL"+(renderer.capabilities.isWebGL2?"2":"1")+" · "+(ext?gl.getParameter(ext.UNMASKED_RENDERER_WEBGL):gl.getParameter(gl.RENDERER))+" · textures max "+gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS));}catch(e){DIAG.log("ERREUR",e.message);}}
 const scene=new THREE.Scene();
 const FOG=new THREE.Color(0xa9c3db);
 scene.background=FOG.clone();

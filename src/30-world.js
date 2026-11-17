@@ -107,7 +107,7 @@ function makeTerrainMat(c){
 function placeOnTrail(obj,s,d,dy){samp(s);obj.position.set(SP.x+SP.rx*d,SP.y+(dy||0),SP.z+SP.rz*d);obj.rotation.set(0,heading(),0);}
 
 // étape de construction : affiche où on en est et rend la main au navigateur
-function buildStep(label){GFX.stepLabel=label;GFX.steps.push([label,performance.now()]);const ld=document.getElementById("loading");if(ld&&!ld.querySelector("button"))ld.textContent="Balisage du sentier · "+C.name+" · "+label+"…";return new Promise(r=>setTimeout(r,16));}
+function buildStep(label){GFX.stepLabel=label;if(DIAG)DIAG.log("ÉTAPE",label);GFX.steps.push([label,performance.now()]);const ld=document.getElementById("loading");if(ld&&!ld.querySelector("button"))ld.textContent="Balisage du sentier · "+C.name+" · "+label+"…";return new Promise(r=>setTimeout(r,16));}
 async function buildWorld(c){
   if(world){scene.remove(world);disposeTree(world);}
   C=c;L=c.L;RAVITO=Math.round(L/2/10)*10;ALT0=c.alt0;GFX.steps=[];await buildStep("Tracé");buildTrack();
