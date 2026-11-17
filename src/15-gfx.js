@@ -5,7 +5,8 @@ const QUALITY={
   basse:{label:"Basse",post:false,bloom:false,shadow:512,grass:2000,trees:.35,water:false,pr:1},
 };
 const GFX={steps:[],stepLabel:"",q:"haute",time:{value:0},xbot:null,tex:{},sky:null,envRT:null,composer:null,bloom:null,grade:null,fxaa:null};
-const TOUCHDEV=window.matchMedia&&window.matchMedia("(pointer: coarse)").matches;
+// téléphones et Firefox démarrent en qualité basse (Firefox coupe WebGL après une surcharge de la carte graphique)
+const TOUCHDEV=(window.matchMedia&&window.matchMedia("(pointer: coarse)").matches)||/Firefox\//.test(navigator.userAgent);
 try{const q=localStorage.getItem("cdc-quality");GFX.q=QUALITY[q]?q:(TOUCHDEV?"basse":"moyenne");}catch(e){GFX.q=TOUCHDEV?"basse":"moyenne";}
 const QS=()=>QUALITY[GFX.q];
 
