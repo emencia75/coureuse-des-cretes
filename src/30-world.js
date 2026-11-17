@@ -106,13 +106,16 @@ function makeTerrainMat(c){
   m.userData.U=U;return m;}
 function placeOnTrail(obj,s,d,dy){samp(s);obj.position.set(SP.x+SP.rx*d,SP.y+(dy||0),SP.z+SP.rz*d);obj.rotation.set(0,heading(),0);}
 
-function buildWorld(c){
+// étape de construction : affiche où on en est et rend la main au navigateur
+function buildStep(label){GFX.stepLabel=label;GFX.steps.push([label,performance.now()]);const ld=document.getElementById("loading");if(ld&&!ld.querySelector("button"))ld.textContent="Balisage du sentier · "+C.name+" · "+label+"…";return new Promise(r=>setTimeout(r,16));}
+async function buildWorld(c){
   if(world){scene.remove(world);disposeTree(world);}
-  C=c;L=c.L;RAVITO=Math.round(L/2/10)*10;ALT0=c.alt0;buildTrack();
+  C=c;L=c.L;RAVITO=Math.round(L/2/10)*10;ALT0=c.alt0;GFX.steps=[];await buildStep("Tracé");buildTrack();
   world=new THREE.Group();scene.add(world);treeMeshes=[];clouds=[];
   const R0=mulberry32(2024+c.id.length*97);
+  await buildStep("Relief");
   // --- terrain : herbe photo, roche, terre et neige mêlées dans le shader
-  {const STEP=2.6,GZ0=150,GZ1=-(L+290);const XS=[];for(let x=-170;x<=170;x+=STEP)XS.push(x);let dx=STEP,xr=XS[XS.length-1],xl=XS[0];while(xr<560){dx=Math.min(dx*1.12,18);xr+=dx;xl-=dx;XS.push(xr);XS.unshift(xl);}
+  {const STEP=GFX.q==="basse"?3.6:2.6,GZ0=150,GZ1=-(L+290);const XS=[];for(let x=-170;x<=170;x+=STEP)XS.push(x);let dx=STEP,xr=XS[XS.length-1],xl=XS[0];while(xr<560){dx=Math.min(dx*1.12,18);xr+=dx;xl-=dx;XS.push(xr);XS.unshift(xl);}
     const cols=XS.length,rows=Math.floor((GZ0-GZ1)/STEP)+1,N=cols*rows;const pos=new Float32Array(N*3),col=new Float32Array(N*3),uv=new Float32Array(N*2),spl=new Float32Array(N*3),rels=new Float32Array(N),ads=new Float32Array(N),sides=new Int8Array(N);
     for(let r=0;r<rows;r++)for(let k=0;k<cols;k++){let x=XS[k],z=GZ0-r*STEP;let t=terrainAt(x,z);if(t.ad>6){x+=(hash2(k,r)-.5)*1.2;z+=(hash2(r+9,k)-.5)*1.2;t=terrainAt(x,z);}const n=r*cols+k;pos[n*3]=x;pos[n*3+1]=t.y;pos[n*3+2]=z;uv[n*2]=x/7;uv[n*2+1]=z/7;rels[n]=t.rel;ads[n]=t.ad;sides[n]=t.d<0?-1:1;}
     const P=c.pal,mA=new THREE.Color(P.mA),mB=new THREE.Color(P.mB),dry=new THREE.Color(P.dry),forest=new THREE.Color(P.forest),cc=new THREE.Color();
@@ -125,6 +128,7 @@ function buildWorld(c){
     const index=new Uint32Array((rows-1)*(cols-1)*6);let q=0;for(let r=0;r<rows-1;r++)for(let k=0;k<cols-1;k++){const a=r*cols+k,b=a+1,d=a+cols,e=d+1;index[q++]=a;index[q++]=b;index[q++]=d;index[q++]=b;index[q++]=e;index[q++]=d;}
     const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.BufferAttribute(pos,3));g.setAttribute("color",new THREE.BufferAttribute(col,3));g.setAttribute("uv",new THREE.BufferAttribute(uv,2));g.setAttribute("aSplat",new THREE.BufferAttribute(spl,3));g.setIndex(new THREE.BufferAttribute(index,1));g.computeVertexNormals();
     trailDirt=soilOf(c)||makeDirt(c.dirt,c.pebble);terrainMesh=new THREE.Mesh(g,makeTerrainMat(c));terrainMesh.receiveShadow=true;world.add(terrainMesh);}
+  await buildStep("Eau");
   // --- fond de vallée, mer ou lac (eau réfléchissante si la qualité le permet)
   const isSea=c.water&&c.water.kind==="sea";seaFixedY=isSea?PY[idx(L)]-20:null;waterObj=null;
   function waterMesh(geo,color){if(QS().water&&THREE.Water&&GFX.tex.water){const w=new THREE.Water(geo,{textureWidth:512,textureHeight:512,waterNormals:GFX.tex.water,sunDirection:SUN_DIR.clone(),sunColor:0xffffff,waterColor:color,distortionScale:2.2,fog:true});w.rotation.x=-Math.PI/2;waterObj=w;return w;}
@@ -140,6 +144,7 @@ function buildWorld(c){
     const n=D.length;for(let r=0;r<rows-1;r++)for(let k=0;k<n-1;k++){const a=r*n+k,b=a+1,cc2=a+n,d=cc2+1;index.push(a,b,cc2,b,d,cc2);}
     const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.Float32BufferAttribute(pos,3));g.setAttribute("uv",new THREE.Float32BufferAttribute(uv,2));g.setAttribute("color",new THREE.Float32BufferAttribute(col,3));g.setIndex(index);g.computeVertexNormals();
     trailMesh=new THREE.Mesh(g,new THREE.MeshStandardMaterial({map:trailMaps.dry,normalMap:trailMaps.dryN,vertexColors:true,roughness:.93}));trailMesh.material.normalScale.set(1.2,1.2);trailMesh.userData.tint=(PHOTO[c.id]&&PHOTO[c.id].soil==='calcaire')?.74:1;trailMesh.material.color.setScalar(trailMesh.userData.tint);trailMesh.receiveShadow=true;world.add(trailMesh);}
+  await buildStep("Herbe");
   // --- herbes : touffes fines qui ondulent au vent
   {const tex=canvasTex(256,(x,n)=>{x.clearRect(0,0,n,n);const R=mulberry32(3);for(let i=0;i<110;i++){const bx=n*.5+(R()-.5)*n*.85,h=n*(.35+R()*.6),bend=(R()-.5)*70;const g=120+R()*110|0;
       x.strokeStyle="rgb("+(g*.62|0)+","+g+","+(g*.3|0)+")";x.lineWidth=1.2+R()*2.2;x.beginPath();x.moveTo(bx,n);x.quadraticCurveTo(bx+bend*.25,n-h*.55,bx+bend,n-h);x.stroke();}
@@ -153,6 +158,7 @@ function buildWorld(c){
       sc.set(k*1.2,k*(c.id==="paysbasque"?1.7:1)*(.8+R0()*.5),k*1.2);q.setFromAxisAngle(up3,R0()*6.28);p.set(x,y-.03,z);m.compose(p,q,sc);mesh.setMatrixAt(n,m);
       cc.setHSL(hsl.h+(R0()-.5)*.07-(c.id==="paysbasque"&&R0()<.4?.14:0),.38+R0()*.12,.5+R0()*.25);mesh.setColorAt(n,cc);}
     grassMesh=mesh;world.add(mesh);}
+  await buildStep("Arbres");
   // --- arbres : rameaux d'aiguilles ou feuillage sur cartes, balancés par le vent
   {const types=c.trees.type==="mixed"?["fir","broad"]:[c.trees.type];const per=Math.round(c.trees.count*QS().trees/types.length);
     for(const ty of types){const photo=ty==="fir"&&!!GFX.tex.spruce;const T=photo?spruceCards():treeCards(ty);const fol=new THREE.MeshStandardMaterial({map:photo?GFX.tex.spruce:ty==="fir"?GFX.tex.needles:GFX.tex.leaves,alphaTest:.4,side:THREE.DoubleSide,roughness:.9,color:lin(ty==="pine"?0x8a9468:ty==="broad"?0xa4b08a:0xffffff)});windShader(fol,.004,1.5,ty==="fir"&&!photo);
@@ -161,6 +167,7 @@ function buildWorld(c){
       while(n<per&&tries<per*20){tries++;const s=R0()*(L+260)-60;samp(s);const side=R0()<.62?1:-1;const d=side*(W+3.4+Math.pow(R0(),1.5)*150);const x=SP.x+SP.rx*d,z=SP.z+SP.rz*d;if(fbm(x*.03,z*.03)<-.1)continue;const t=terrainAt(x,z);if(t.ad<2.8||t.rel>c.trees.maxRel)continue;
         const k=.75+R0()*.85;sc.set(k,k*(.85+R0()*.4),k);e.set((R0()-.5)*.05,R0()*6.28,(R0()-.5)*.05);q.setFromEuler(e);p.set(x,t.y-.2,z);m.compose(p,q,sc);mF.setMatrixAt(n,m);mT.setMatrixAt(n,m);if(photo)cc.setHSL(.25,.12+R0()*.1,.62+R0()*.3);else if(ty==="fir")cc.setHSL(.28+R0()*.05,.25+R0()*.15,.5+R0()*.25);else cc.setHSL(.24+R0()*.08,.3+R0()*.2,.55+R0()*.3);mF.setColorAt(n,cc);base.push(cc.r,cc.g,cc.b);n++;}
       mF.count=mT.count=n;mF.receiveShadow=mT.receiveShadow=true;mF.userData.base=base;world.add(mF);if(!photo)world.add(mT);treeMeshes.push(mF);}}
+  await buildStep("Rochers");
   // --- rochers sculptés (relief irrégulier, texture de roche)
   {const variants=[0,1,2,3].map(v=>rockGeo(v));const RK=rockOf(c);const mat=new THREE.MeshStandardMaterial({color:RK.photo?new THREE.Color(1,1,1).multiplyScalar(RK.tint):lin(c.pal.rock),map:RK.set.map,normalMap:RK.set.normal,roughness:.9});const COUNT=Math.round(700*(1+Math.max(0,c.rockBias)*1.5));const per=Math.ceil(COUNT/4);
     variants.forEach(geo=>{const mesh=new THREE.InstancedMesh(geo,mat,per);const m=new THREE.Matrix4(),q=new THREE.Quaternion(),sc=new THREE.Vector3(),p=new THREE.Vector3(),e=new THREE.Euler(),cc=new THREE.Color();
@@ -168,6 +175,7 @@ function buildWorld(c){
         sc.set(k*(1+R0()*.5),k*(.55+R0()*.4),k*(1+R0()*.5));e.set((R0()-.5)*.4,R0()*6.28,(R0()-.5)*.4);q.setFromEuler(e);p.set(x,t.y+k*.1,z);m.compose(p,q,sc);mesh.setMatrixAt(i,m);cc.setScalar(.8+R0()*.35);mesh.setColorAt(i,cc);}
       mesh.receiveShadow=true;mesh.castShadow=false;world.add(mesh);});}
 
+  await buildStep("Montagnes");
   // --- toile de fond photo (panorama détouré sur un cylindre qui suit la caméra)
   panoObj=null;const PH=PHOTO[c.id]||{};const pt=PH.pano&&GFX.tex.pano&&GFX.tex.pano[PH.pano];
   if(pt){const Rr=1700,rep=4,Hh=2*Math.PI*Rr/rep/3;const t=pt.clone();t.needsUpdate=true;t.repeat.set(rep,1);
@@ -182,10 +190,12 @@ function buildWorld(c){
     for(let i=0;i<COUNT;i++){const s=-260+(i/2|0)*((L+700)/(COUNT/2))+R0()*40;samp(clamp(s,S0,S1));const side=i%2?1:-1;const d=side*(620+R0()*520);const h=(side<0?520+R0()*520:380+R0()*420)*pk.h;const r=Math.min(h*(pk.round?1.6:.6+R0()*.3),Math.abs(d)*.5);
       pp.set(SP.x+SP.rx*d,SP.y+(side<0?40:-190)*(pk.round?.5:1),SP.z+SP.rz*d+(s<S0?s-S0:0));q.setFromAxisAngle(up,R0()*6);sc.set(r,h,r);m.compose(pp,q,sc);mesh.setMatrixAt(i,m);}
     world.add(mesh);}
+  await buildStep("Ciel");
   // --- nuages : sprites vaporeux
   cloudMat=new THREE.SpriteMaterial({map:GFX.tex.cloud,transparent:true,depthWrite:false,fog:false,opacity:.9});
   for(let i=0;i<22;i++){const sp=new THREE.Sprite(cloudMat);const sz=160+R0()*220;sp.scale.set(sz*1.8,sz*.7,1);samp(R0()*L);sp.position.set(SP.x+(R0()-.5)*1400,SP.y+170+R0()*200,SP.z-200+(R0()-.5)*900);sp.userData.v=1.5+R0()*2.5;world.add(sp);clouds.push(sp);}
 
+  await buildStep("Décor et spectateurs");
   adSpots=[];buildDecor(R0);adSpots.sort((a,b)=>a.s-b.s);
 }
 
@@ -225,7 +235,7 @@ function buildDecor(R0){
   // spectateurs
   {const zones=[[-30,25,40],[RAVITO-40,RAVITO+12,26],[L-140,L+40,70]];const list=[];const fq={haute:1,moyenne:.6,basse:.35}[GFX.q]||1;
     for(const z of zones)for(let i=0;i<Math.round(z[2]*fq);i++){const s=lerp(z[0],z[1],R0());samp(s);const side=R0()<.6?-1:1;const d=side*(W+1.6+R0()*3.4);const x=SP.x+SP.rx*d,zz=SP.z+SP.rz*d;const t=terrainAt(x,zz);list.push({x:x,y:t.y,z:zz,ph:R0()*6,sp:4+R0()*5,c:R0()});}
-    let shirtGeo,restGeo;const baked=bakeSpectator();
+    let shirtGeo,restGeo;const baked=GFX.q==="basse"?false:bakeSpectator();
     if(baked){shirtGeo=baked.cloth;restGeo=baked.skin;}else{const armG=sd=>new THREE.CylinderGeometry(.045,.04,.55,8).translate(0,.27,0).rotateZ(sd*.5).translate(sd*.19,1.28,0);
     shirtGeo=mergeColored([{geo:new THREE.CylinderGeometry(.17,.15,.56,12).scale(1,1,.65).translate(0,1.12,0),color:0xffffff},{geo:new THREE.SphereGeometry(.17,12,6,0,Math.PI*2,0,Math.PI/2).scale(1,.4,.65).translate(0,1.4,0),color:0xffffff},{geo:armG(-1),color:0xffffff},{geo:armG(1),color:0xffffff}]);
     restGeo=mergeColored([{geo:new THREE.SphereGeometry(.11,14,10).translate(0,1.6,0),color:0xd9a07a},{geo:new THREE.SphereGeometry(.117,14,10,0,Math.PI*2,0,Math.PI*.5).translate(0,1.62,.01),color:0x3a2618},{geo:new THREE.CylinderGeometry(.065,.05,.84,8).translate(-.08,.42,0),color:0x2b3442},{geo:new THREE.CylinderGeometry(.065,.05,.84,8).translate(.08,.42,0),color:0x2b3442},{geo:new THREE.SphereGeometry(.04,8,6).translate(-.47,1.72,0),color:0xd9a07a},{geo:new THREE.SphereGeometry(.04,8,6).translate(.47,1.72,0),color:0xd9a07a}]);}

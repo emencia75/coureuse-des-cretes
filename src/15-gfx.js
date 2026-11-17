@@ -2,10 +2,11 @@
 const QUALITY={
   haute:{label:"Haute",post:true,bloom:true,shadow:2048,grass:16000,trees:1,water:true,pr:2},
   moyenne:{label:"Moyenne",post:true,bloom:false,shadow:1024,grass:8000,trees:.7,water:true,pr:1.5},
-  basse:{label:"Basse",post:false,bloom:false,shadow:1024,grass:3500,trees:.45,water:false,pr:1},
+  basse:{label:"Basse",post:false,bloom:false,shadow:512,grass:2000,trees:.35,water:false,pr:1},
 };
-const GFX={q:"haute",time:{value:0},xbot:null,tex:{},sky:null,envRT:null,composer:null,bloom:null,grade:null,fxaa:null};
-try{const q=localStorage.getItem("cdc-quality");GFX.q=QUALITY[q]?q:"moyenne";}catch(e){GFX.q="moyenne";}
+const GFX={steps:[],stepLabel:"",q:"haute",time:{value:0},xbot:null,tex:{},sky:null,envRT:null,composer:null,bloom:null,grade:null,fxaa:null};
+const TOUCHDEV=window.matchMedia&&window.matchMedia("(pointer: coarse)").matches;
+try{const q=localStorage.getItem("cdc-quality");GFX.q=QUALITY[q]?q:(TOUCHDEV?"basse":"moyenne");}catch(e){GFX.q=TOUCHDEV?"basse":"moyenne";}
 const QS=()=>QUALITY[GFX.q];
 
 // --- bruit périodique (textures sans couture)

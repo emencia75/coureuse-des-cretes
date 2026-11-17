@@ -60,12 +60,13 @@ let builtCourse=null,builtWeather=null;
 function ensureWorld(cb){const c=courseById(cfg.course),w=resolvedWeather();
   if(builtCourse===c.id){if(builtWeather!==w){applyWeather(w);builtWeather=w;}cb&&cb();return;}
   const ld=$("loading");ld.textContent="Balisage du sentier · "+c.name+"…";ld.hidden=false;
-  setTimeout(()=>{try{buildWorld(c);buildHazards();applyWeather(w);}catch(e){
+  const build=async()=>{GFX.building=true;try{await buildWorld(c);await buildStep("Pièges");buildHazards();await buildStep("Météo");applyWeather(w);await buildStep("Préparation de l’affichage");resetRace();runners.forEach(placeRunner);try{renderer.compile(scene,camera);}catch(e){console.warn(e);}await buildStep("Prêt");}finally{GFX.building=false;}};
+  setTimeout(async()=>{try{await build();}catch(e){
       // secours : on repasse en qualité basse et on reconstruit une fois
-      console.warn(e);if(GFX.q!=="basse"){GFX.q="basse";try{localStorage.setItem("cdc-quality","basse");}catch(_){ }setupPost();renderQuality&&renderQuality();try{buildWorld(c);buildHazards();applyWeather(w);}catch(e2){showFatal(e2);return;}}else{showFatal(e);return;}}
+      console.warn(e);if(GFX.q!=="basse"){GFX.q="basse";try{localStorage.setItem("cdc-quality","basse");}catch(_){ }setupPost();renderQuality&&renderQuality();try{await build();}catch(e2){showFatal(e2);return;}}else{showFatal(e);return;}}
     builtCourse=c.id;builtWeather=w;resetRace();runners.forEach(placeRunner);ld.hidden=true;cb&&cb();},40);}
 // erreur bloquante : on l'affiche sur l'écran de chargement pour pouvoir la signaler
-function showFatal(e){const ld=$("loading");ld.hidden=false;ld.style.flexDirection="column";ld.style.gap="12px";ld.style.textAlign="center";ld.style.padding="0 24px";ld.textContent="";
+function showFatal(e){if(GFX.stepLabel)e=new Error((e&&e.message||e)+" (étape : "+GFX.stepLabel+")");const ld=$("loading");ld.hidden=false;ld.style.flexDirection="column";ld.style.gap="12px";ld.style.textAlign="center";ld.style.padding="0 24px";ld.textContent="";
   ld.append(el("div",null,"Le jeu n’a pas pu démarrer"));const m=el("div",null,String(e&&e.message||e).slice(0,240));m.style.cssText="font:500 14px var(--body);color:#f4f1e8;max-width:60ch;-webkit-user-select:text;user-select:text";ld.append(m);
   const b=el("button","btn","Relancer en qualité basse");b.addEventListener("click",()=>{try{localStorage.setItem("cdc-quality","basse");}catch(_){ }location.reload();});ld.append(b);}
 function selectCourse(id){cfg.course=id;saveCfg();renderCourses();renderWeather();renderSummary();ensureWorld();if(!$("paneBoard").hidden)renderBoards();}

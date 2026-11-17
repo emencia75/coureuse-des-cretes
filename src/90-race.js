@@ -143,7 +143,7 @@ let last=performance.now(),T=0,last0=performance.now(),perfAcc=0,perfN=0,perfLow
 function lowerQuality(fps){const order=["haute","moyenne","basse"];const i=order.indexOf(GFX.q);
   if(state==="menu"&&i<2){GFX.q=order[i+1];try{localStorage.setItem("cdc-quality",GFX.q);}catch(e){}setupPost();renderQuality();applyWeather(resolvedWeather());builtCourse=null;ensureWorld(()=>{showMenu();});warn("Qualité réduite automatiquement · "+QUALITY[GFX.q].label);}
   else if(perfLowered<2){perfLowered++;if(GFX.composer){GFX.composer=null;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.outputEncoding=THREE.sRGBEncoding;}else renderer.setPixelRatio(Math.max(.6,renderer.getPixelRatio()*.7));resize();}}
-function frame(now){requestAnimationFrame(frame);let dt=(now-last)/1000;last=now;if(dt>.05)dt=.05;if(dt<=0||!world)return;T+=dt;GFX.dt=dt;GFX.time.value+=dt;
+function frame(now){requestAnimationFrame(frame);let dt=(now-last)/1000;last=now;if(dt>.05)dt=.05;if(dt<=0||!world||GFX.building)return;T+=dt;GFX.dt=dt;GFX.time.value+=dt;
   // qualité adaptative : si l'image tombe sous ~24 images/s, on allège
   perfAcc+=Math.min((now-last0)/1000,.5);perfN++;last0=now;if(perfAcc>4){const fps=perfN/perfAcc;perfAcc=0;perfN=0;if(fps<24)lowerQuality(fps);}
   if(state==="countdown"){countT-=dt;const n=Math.ceil(countT-.2);if(n!==lastBeep&&n>=0){lastBeep=n;if(n>0){$("count").textContent=String(n);sfxBeep(520,.15);}else{$("count").textContent="Partez !";sfxBeep(1040,.35);}}if(countT<=0){state="race";$("count").hidden=true;}}
@@ -182,6 +182,8 @@ function frame(now){requestAnimationFrame(frame);let dt=(now-last)/1000;last=now
   if(state==="race"||state==="finished"||state==="countdown")updateHUD();
   renderFrame();
 }
+// la carte graphique a décroché (fréquent sur mobile avec trop d'effets) : on le dit et on propose la qualité basse
+canvas.addEventListener("webglcontextlost",ev=>{ev.preventDefault();showFatal(new Error("La carte graphique de l’appareil a décroché"));},false);
 // erreurs inattendues pendant le chargement : affichées au lieu d'un écran figé
 window.addEventListener("error",ev=>{if(!$("loading").hidden)showFatal(ev.error||ev.message);});
 window.addEventListener("unhandledrejection",ev=>{if(!$("loading").hidden)showFatal(ev.reason);});
