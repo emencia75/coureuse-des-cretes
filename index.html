@@ -408,7 +408,15 @@ function lin(hex){return new THREE.Color(hex).convertSRGBToLinear();}
 if(!window.THREE){$("loading").textContent="Impossible de charger le moteur 3D";return;}
 
 const canvas=$("c");
-const renderer=new THREE.WebGLRenderer({canvas:canvas,antialias:true,powerPreference:"high-performance"});
+// WebGL : essai normal, puis réglages tolérants ; sinon explication claire (WebGL désactivé dans le navigateur)
+let renderer=null;
+for(const opt of[{antialias:true,powerPreference:"high-performance"},{antialias:false,powerPreference:"default",failIfMajorPerformanceCaveat:false}]){try{renderer=new THREE.WebGLRenderer(Object.assign({canvas:canvas},opt));break;}catch(e){if(DIAG)DIAG.log("AVERT","WebGL refusé avec "+JSON.stringify(opt));}}
+if(!renderer){const ld=$("loading");ld.hidden=false;ld.style.cssText+="flex-direction:column;gap:14px;text-align:center;padding:0 24px";ld.textContent="";
+  const t=document.createElement("div");t.textContent="La 3D est désactivée dans ce navigateur";ld.appendChild(t);
+  const ff=/Firefox/.test(navigator.userAgent);const m=document.createElement("div");m.style.cssText="font:500 15px/1.5 var(--body);color:#f4f1e8;max-width:58ch;-webkit-user-select:text;user-select:text";
+  m.textContent=ff?"Firefox n’autorise pas WebGL sur cet appareil. Dans Firefox : Paramètres › Général › Performances, décochez « Utiliser les paramètres de performance recommandés » puis cochez « Utiliser l’accélération graphique si disponible », et redémarrez Firefox. Si ça ne suffit pas, tapez about:config dans la barre d’adresse et vérifiez que webgl.disabled vaut false. Vous pouvez aussi jouer avec Chrome ou Safari."
+    :"Ce navigateur n’autorise pas WebGL. Activez l’accélération matérielle dans ses réglages, ou essayez avec Chrome, Safari ou Firefox à jour.";
+  ld.appendChild(m);return;}
 renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
 renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 renderer.outputEncoding=THREE.sRGBEncoding;
