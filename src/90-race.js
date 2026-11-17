@@ -139,8 +139,13 @@ $("resumeBtn").addEventListener("click",togglePause);$("quitBtn").addEventListen
 /* ================= Boucle ================= */
 function resize(){const w=window.innerWidth,h=window.innerHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();resizePost();}
 window.addEventListener("resize",resize);resize();
-let last=performance.now(),T=0;
+let last=performance.now(),T=0,last0=performance.now(),perfAcc=0,perfN=0,perfLowered=0;
+function lowerQuality(fps){const order=["haute","moyenne","basse"];const i=order.indexOf(GFX.q);
+  if(state==="menu"&&i<2){GFX.q=order[i+1];try{localStorage.setItem("cdc-quality",GFX.q);}catch(e){}setupPost();renderQuality();applyWeather(resolvedWeather());builtCourse=null;ensureWorld(()=>{showMenu();});warn("Qualité réduite automatiquement · "+QUALITY[GFX.q].label);}
+  else if(perfLowered<2){perfLowered++;if(GFX.composer){GFX.composer=null;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.outputEncoding=THREE.sRGBEncoding;}else renderer.setPixelRatio(Math.max(.6,renderer.getPixelRatio()*.7));resize();}}
 function frame(now){requestAnimationFrame(frame);let dt=(now-last)/1000;last=now;if(dt>.05)dt=.05;if(dt<=0||!world)return;T+=dt;GFX.dt=dt;GFX.time.value+=dt;
+  // qualité adaptative : si l'image tombe sous ~24 images/s, on allège
+  perfAcc+=Math.min((now-last0)/1000,.5);perfN++;last0=now;if(perfAcc>4){const fps=perfN/perfAcc;perfAcc=0;perfN=0;if(fps<24)lowerQuality(fps);}
   if(state==="countdown"){countT-=dt;const n=Math.ceil(countT-.2);if(n!==lastBeep&&n>=0){lastBeep=n;if(n>0){$("count").textContent=String(n);sfxBeep(520,.15);}else{$("count").textContent="Partez !";sfxBeep(1040,.35);}}if(countT<=0){state="race";$("count").hidden=true;}}
   const simulate=state==="race"||state==="finished"||state==="ended";
   if(simulate){raceT+=dt;
@@ -177,8 +182,13 @@ function frame(now){requestAnimationFrame(frame);let dt=(now-last)/1000;last=now
   if(state==="race"||state==="finished"||state==="countdown")updateHUD();
   renderFrame();
 }
+// erreurs inattendues pendant le chargement : affichées au lieu d'un écran figé
+window.addEventListener("error",ev=>{if(!$("loading").hidden)showFatal(ev.error||ev.message);});
+window.addEventListener("unhandledrejection",ev=>{if(!$("loading").hidden)showFatal(ev.reason);});
+// filet de sécurité : si le chargement dépasse 40 s, on propose de continuer
+setTimeout(()=>{const ld=$("loading");if(!ld.hidden&&!ld.querySelector("button"))showFatal(new Error("Le chargement prend trop de temps (connexion lente ou appareil peu puissant)."));},40000);
 // démarrage : ciel, post-traitement, ressources, puis le monde
-setupSky();setupPost();renderQuality();
+try{setupSky();}catch(e){console.warn(e);GFX.sky=null;sky.visible=true;}setupPost();renderQuality();
 loadAssets((n,t)=>{$("loading").textContent="Chargement des modèles · "+n+"/"+t;}).then(()=>{
   setPlayer(heroById(cfg.hero),cfg.custom[cfg.hero]);
   renderHeroGrid();renderHeroDetail();renderCourses();renderWeather();renderSummary();renderBoards();

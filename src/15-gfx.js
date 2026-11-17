@@ -5,7 +5,7 @@ const QUALITY={
   basse:{label:"Basse",post:false,bloom:false,shadow:1024,grass:3500,trees:.45,water:false,pr:1},
 };
 const GFX={q:"haute",time:{value:0},xbot:null,tex:{},sky:null,envRT:null,composer:null,bloom:null,grade:null,fxaa:null};
-try{const q=localStorage.getItem("cdc-quality");GFX.q=QUALITY[q]?q:(window.matchMedia("(pointer: coarse)").matches?"moyenne":"haute");}catch(e){GFX.q="moyenne";}
+try{const q=localStorage.getItem("cdc-quality");GFX.q=QUALITY[q]?q:"moyenne";}catch(e){GFX.q="moyenne";}
 const QS=()=>QUALITY[GFX.q];
 
 // --- bruit périodique (textures sans couture)
@@ -61,7 +61,8 @@ const GradeShader={uniforms:{tDiffuse:{value:null},exposure:{value:1},saturation
    "vec3 aces(vec3 v){v*=exposure*.48;return clamp((v*(2.51*v+.03))/(v*(2.43*v+.59)+.14),0.,1.);}",
    "void main(){vec3 c=aces(texture2D(tDiffuse,vUv).rgb)*tint;c=pow(c,vec3(1./2.2));float l=dot(c,vec3(.2126,.7152,.0722));c=mix(vec3(l),c,saturation);c=(c-.5)*contrast+.5;",
    "float r=length((vUv-.5)*vec2(1.15,1.));c*=1.-vignette*smoothstep(.35,.85,r);gl_FragColor=vec4(clamp(c,0.,1.),1.);}"].join("\n")};
-function setupPost(){if(GFX.composer){GFX.composer.dispose&&GFX.composer.dispose();GFX.composer=null;}const q=QS();
+function setupPost(){try{setupPostInner();}catch(e){console.warn(e);GFX.composer=null;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.outputEncoding=THREE.sRGBEncoding;}}
+function setupPostInner(){if(GFX.composer){GFX.composer.dispose&&GFX.composer.dispose();GFX.composer=null;}GFX.bloom=GFX.grade=GFX.fxaa=null;const q=QS();
   const can=q.post&&THREE.EffectComposer&&THREE.RenderPass&&THREE.ShaderPass;
   renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,q.pr));renderer.shadowMap.enabled=true;sun.shadow.mapSize.set(q.shadow,q.shadow);if(sun.shadow.map){sun.shadow.map.dispose();sun.shadow.map=null;}
   if(!can){renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.outputEncoding=THREE.sRGBEncoding;return;}
@@ -72,11 +73,13 @@ function setupPost(){if(GFX.composer){GFX.composer.dispose&&GFX.composer.dispose
   GFX.grade=new THREE.ShaderPass(GradeShader);c.addPass(GFX.grade);
   if(THREE.FXAAShader){GFX.fxaa=new THREE.ShaderPass(THREE.FXAAShader);GFX.fxaa.uniforms.resolution.value.set(1/(w*pr),1/(h*pr));c.addPass(GFX.fxaa);}
   GFX.composer=c;}
-function renderFrame(){if(GFX.composer)GFX.composer.render();else renderer.render(scene,camera);}
+function renderFrame(){if(GFX.composer){try{GFX.composer.render();return;}catch(e){console.warn(e);GFX.composer=null;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.outputEncoding=THREE.sRGBEncoding;}}renderer.render(scene,camera);}
 function resizePost(){if(!GFX.composer)return;const w=window.innerWidth,h=window.innerHeight,pr=renderer.getPixelRatio();GFX.composer.setSize(w,h);if(GFX.fxaa)GFX.fxaa.uniforms.resolution.value.set(1/(w*pr),1/(h*pr));}
 
 // --- ressources (modèle animé, photos d'herbe, eau) : facultatives, le jeu marche sans
 function loadTex(url,srgb){return new Promise(res=>{new THREE.TextureLoader().load(url,t=>{t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=MAXANISO;if(srgb)t.encoding=THREE.sRGBEncoding;res(t);},undefined,()=>res(null));});}
+// chaque ressource a 15 s pour arriver ; sinon le jeu continue sans elle
+const inTime=(p,ms)=>Promise.race([p,new Promise(r=>setTimeout(r,ms||15000))]);
 function loadAssets(onStep){const jobs=[];
   if(THREE.GLTFLoader)jobs.push(new Promise(res=>new THREE.GLTFLoader().load("assets/xbot.json",g=>{GFX.xbot=g;res();},undefined,()=>res())));
   GFX.tex.photo={};
@@ -85,8 +88,8 @@ function loadAssets(onStep){const jobs=[];
   jobs.push(loadTex("assets/pano-montblanc.webp",true).then(t=>{if(t){t.wrapS=THREE.MirroredRepeatWrapping;t.wrapT=THREE.ClampToEdgeWrapping;GFX.tex.pano={montblanc:t};}}));
   jobs.push(loadTex("assets/sapin.webp",true).then(t=>{if(t){t.wrapS=t.wrapT=THREE.ClampToEdgeWrapping;GFX.tex.spruce=t;}}));
   jobs.push(loadTex("assets/grass.jpg",true).then(t=>GFX.tex.grass=t));jobs.push(loadTex("assets/grass_n.jpg",false).then(t=>GFX.tex.grassN=t));jobs.push(loadTex("assets/waternormals.jpg",false).then(t=>GFX.tex.water=t));
-  let n=0;jobs.forEach(j=>j.then(()=>onStep&&onStep(++n,jobs.length)));
-  return Promise.all(jobs).then(()=>{const L=document.getElementById("loading");if(L)L.textContent="Préparation des textures…";
+  let n=0;const timed=jobs.map(j=>inTime(j).catch(()=>{}));timed.forEach(j=>j.then(()=>onStep&&onStep(++n,timed.length)));
+  return Promise.all(timed).then(()=>{const L=document.getElementById("loading");if(L)L.textContent="Préparation des textures…";
     return new Promise(r=>setTimeout(()=>{GFX.tex.rock=makeRock();GFX.tex.needles=makeNeedles();GFX.tex.leaves=makeLeaves();GFX.tex.cloud=makeCloud();r();},20));});}
 
 // textures du parcours : photo si disponible, sinon procédurale
